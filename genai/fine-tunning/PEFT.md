@@ -54,12 +54,12 @@ Adding adapters: Think of adapters like an expansion pack for a board game. Adap
 
 There are several methods used to perform PEFT, including:
 
-LoRA (low-rank adaptation)
-QLoRA (quantized low-rank adaptation)
-Prefix tuning
-Prompt tuning
-P-tuning
-Learn about LoRA vs QLoRA
+- LoRA (low-rank adaptation)
+- QLoRA (quantized low-rank adaptation)
+- Prefix tuning
+- Prompt tuning
+- P-tuning
+- Learn about LoRA vs QLoRA
 
 A leading tool in this space is vLLM. vLLM is a memory-efficient inference server and engine, designed to improve the speed and processing power of large language models in a hybrid cloud setting. vLLM’s support for PEFT, specifically for serving multiple LoRA adapters, provides a massive efficiency boost by allowing 1 base model to remain loaded in the GPU memory.
 
