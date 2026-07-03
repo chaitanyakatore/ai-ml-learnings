@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "quantprop"
+version = "0.1.0"
+description = "Quantitative Research Platform for systematic prop-firm trading"
+authors = ["Chaitanya Katore <chaitanya@example.com>"]
+readme = "PROJECT_OVERVIEW.md"
+packages = [{include = "quantprop"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+polars = "^1.0.0"
+pyarrow = "^18.0.0"
+pandas = "^2.2.0"
+numpy = "^2.0.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+black = "^24.1.0"
+mypy = "^1.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
