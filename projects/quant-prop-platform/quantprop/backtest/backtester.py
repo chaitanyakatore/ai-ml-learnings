@@ -47,7 +47,9 @@ class BacktestEngine:
         spread: float = 0.0,
         commission: float = 0.0,
         slippage: float = 0.0,
-        contract_size: float = 100000.0  # Default to standard Forex lot size (100k units)
+        contract_size: float = 100000.0,  # Default to standard Forex lot size (100k units)
+        ml_filter: Optional[Any] = None,
+        ml_filter_threshold: float = 0.55
     ):
         self.strategy = strategy
         self.risk_manager = risk_manager
@@ -56,6 +58,8 @@ class BacktestEngine:
         self.commission = commission
         self.slippage = slippage
         self.contract_size = contract_size
+        self.ml_filter = ml_filter
+        self.ml_filter_threshold = ml_filter_threshold
 
     def run(self, data: pl.LazyFrame) -> Dict[str, Any]:
         """
@@ -288,7 +292,26 @@ class BacktestEngine:
                 sl_price_estimate = exec_price_estimate * (1.0 - self.strategy.risk_params["stop_loss_pct"])
                 
                 approved = True
-                if self.risk_manager is not None:
+                
+                # --- ML Filter Check ---
+                if self.ml_filter is not None and getattr(self.ml_filter, "is_trained", False):
+                    try:
+                        trade_features = {}
+                        for feat in self.ml_filter.feature_names:
+                            val = row.get(feat)
+                            if val is None:
+                                approved = False
+                                break
+                            trade_features[feat] = float(val)
+                        
+                        if approved:
+                            prob = self.ml_filter.should_execute(trade_features)
+                            if prob < self.ml_filter_threshold:
+                                approved = False
+                    except Exception:
+                        approved = False
+
+                if approved and self.risk_manager is not None:
                     check = self.risk_manager.check_order(
                         symbol="MOCK",
                         direction="BUY",
