@@ -169,6 +169,10 @@ class EvaluationEngine:
             "trading_days_count": trading_days_count,
             "min_trading_days_met": is_min_days_met,
             "max_drawdown_breached": breached,
+            "profit_target_pct": self.profit_target_pct,
+            "daily_drawdown_pct": self.daily_dd_limit_pct,
+            "overall_drawdown_pct": self.overall_dd_limit_pct,
+            "min_trading_days": self.min_trading_days,
         }
 
         return {
