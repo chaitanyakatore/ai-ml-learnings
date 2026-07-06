@@ -61,6 +61,8 @@ class BacktestEngine:
         """
         Execute the backtest simulation over the historical data.
         """
+        from datetime import timedelta
+        
         # Step 1: Generate strategy signals
         signals_lf = self.strategy.generate_signals(data)
         df = signals_lf.collect()
@@ -75,6 +77,15 @@ class BacktestEngine:
         
         pending_order: Optional[Dict[str, Any]] = None
         
+        # Track daily drawdown variables (10:00 PM UTC reset)
+        prev_shifted_date = None
+        daily_dd_limit_amount = self.initial_balance * 0.03
+        day_ref_value = self.initial_balance
+        overall_dd_floor = self.initial_balance * 0.94
+        
+        breached = False
+        breach_reason = ""
+        
         # Loop through each bar sequentially (event-driven execution)
         for i in range(len(df)):
             row = df.row(i, named=True)
@@ -84,6 +95,17 @@ class BacktestEngine:
             low_p = row["low"]
             close_p = row["close"]
             sig = row.get("signal", 0)
+            
+            # --- 0. Daily Drawdown Reset Logic (10:00 PM UTC boundary) ---
+            # Shift timestamp by +2 hours so that 22:00 UTC maps to 00:00 UTC of the next day.
+            shifted_dt = timestamp + timedelta(hours=2)
+            current_shifted_date = shifted_dt.date()
+            if prev_shifted_date is None or current_shifted_date != prev_shifted_date:
+                day_ref_value = max(balance, equity)
+                daily_dd_limit_amount = day_ref_value * 0.03
+                prev_shifted_date = current_shifted_date
+                
+            daily_dd_floor = day_ref_value - daily_dd_limit_amount
             
             # --- 1. Process Pending Order (if any) ---
             if pending_order is not None:
@@ -122,6 +144,10 @@ class BacktestEngine:
                     "tp_price": tp_price,
                     "commissions": comm_cost
                 })
+                
+                # Update RiskManager base lot on successful execution
+                if self.risk_manager is not None:
+                    self.risk_manager.update_base_lot("MOCK", lot_size)
                 
                 pending_order = None
 
@@ -202,6 +228,45 @@ class BacktestEngine:
                 
             equity = balance + floating_pnl
             
+            # --- 4a. Real-Time Drawdown Breach Enforcement ---
+            if equity < daily_dd_floor:
+                breached = True
+                breach_reason = "daily_drawdown_breach"
+            elif equity < overall_dd_floor or balance < overall_dd_floor:
+                breached = True
+                breach_reason = "overall_drawdown_breach"
+                
+            if breached:
+                # Force liquidation of all positions immediately due to account violation
+                for pos in open_positions:
+                    dir_sign = 1 if pos["direction"] == "BUY" else -1
+                    if pos["direction"] == "BUY":
+                        final_close_price = close_p - self.spread - self.slippage
+                    else:
+                        final_close_price = close_p + self.spread + self.slippage
+                    pnl = (final_close_price - pos["entry_price"]) * dir_sign * pos["lot_size"] * self.contract_size
+                    balance += pnl
+                    completed_trades.append({
+                        "symbol": pos["symbol"],
+                        "direction": pos["direction"],
+                        "lot_size": pos["lot_size"],
+                        "entry_time": pos["entry_time"],
+                        "entry_price": pos["entry_price"],
+                        "exit_time": timestamp,
+                        "exit_price": final_close_price,
+                        "pnl": pnl,
+                        "commissions": pos["commissions"],
+                        "exit_reason": f"BREACH_{breach_reason.upper()}"
+                    })
+                open_positions = []
+                equity = balance
+                equity_curve.append({
+                    "timestamp": timestamp,
+                    "balance": balance,
+                    "equity": equity
+                })
+                break
+            
             # Save equity curve point
             equity_curve.append({
                 "timestamp": timestamp,
@@ -209,17 +274,35 @@ class BacktestEngine:
                 "equity": equity
             })
 
-            # --- 5. Queue Strategy Signals ---
-            # Signal generated at close of bar T -> Pending order executes at Open of bar T+1
+            # --- 5. Queue Strategy Signals (with Risk Checks) ---
             if sig == 1 and not open_positions and pending_order is None:
-                # In this v1 backtester, we check the strategy's risk parameters
                 lot_size = self.strategy.risk_params.get("base_lot", 0.1)
                 
-                # Check with risk manager if available
+                # Check next bar open execution price for risk analysis
+                if i + 1 < len(df):
+                    next_open = df.row(i + 1, named=True)["open"]
+                else:
+                    next_open = close_p
+                    
+                exec_price_estimate = next_open + self.spread + self.slippage
+                sl_price_estimate = exec_price_estimate * (1.0 - self.strategy.risk_params["stop_loss_pct"])
+                
                 approved = True
                 if self.risk_manager is not None:
-                    # In Phase 2 this will run actual check_order rules. For now, approve.
-                    pass
+                    check = self.risk_manager.check_order(
+                        symbol="MOCK",
+                        direction="BUY",
+                        lot_size=lot_size,
+                        entry_price=exec_price_estimate,
+                        sl_price=sl_price_estimate,
+                        account_balance=balance,
+                        account_equity=equity,
+                        daily_dd_limit_amount=daily_dd_limit_amount,
+                        open_positions=open_positions,
+                        contract_size=self.contract_size
+                    )
+                    approved = check["approved"]
+                    lot_size = check.get("adjusted_lot_size", lot_size)
                     
                 if approved:
                     pending_order = {
@@ -263,8 +346,7 @@ class BacktestEngine:
                 open_positions = []
 
         # --- 6. End of Backtest Liquidation ---
-        # Close any positions still open at the very end of the time series
-        if open_positions:
+        if open_positions and not breached:
             last_row = df.row(len(df) - 1, named=True)
             last_close = last_row["close"]
             last_time = last_row["timestamp"]
@@ -314,5 +396,7 @@ class BacktestEngine:
         
         return {
             "trade_log": trade_log_df,
-            "equity_curve": equity_curve_df
+            "equity_curve": equity_curve_df,
+            "breached": breached,
+            "breach_reason": breach_reason
         }

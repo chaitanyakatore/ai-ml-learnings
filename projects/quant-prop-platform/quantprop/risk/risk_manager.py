@@ -1,34 +1,16 @@
-"""
-Risk Management
-
-Responsibility:
-- Intercepts strategy signals pre-execution and runs them through compliance checks.
-- Enforces stop-loss validation, leverage verification, lot sizing, and hedging prohibitions.
-- Dynamically tracks order history to implement the FundedFirm "base lot" logic per instrument.
-
-Interface Boundaries:
-- Inputs:
-  * Proposed order details (symbol, direction, lot_size, sl_price, tp_price).
-  * Current account state (balance, equity, daily_dd_limit_amount, open_positions).
-- Outputs:
-  * Decision object: (is_approved: bool, reason: str, adjusted_order: dict or None).
-
-Core Constraints:
-- No Hedging: Opposing BUY and SELL on the same symbol is prohibited (§7).
-- Single Trade Loss Cap: Clustered trade loss must not exceed 40% of the daily drawdown limit (§5).
-- Dynamic Base-Lot sizing: Tracks order history per instrument. Lot size must be between base_lot and 5x base_lot.
-  Resets base_lot downward if a smaller trade lot is placed (§6).
-- Stateful behavior: Must persist running state (e.g. minimum lot size) per instrument across trades.
-"""
-
 from typing import Dict, Any, Optional
 
 class RiskManager:
     """
-    Stateful risk and pre-trade rules validator.
+    Stateful risk and pre-trade compliance checks engine.
+    
+    Implements FundedFirm rules:
+    - Hedging prohibition (§7): No opposite positions on the same symbol.
+    - Single trade loss cap (§5): Worst-case loss must not exceed 40% of the daily drawdown limit.
+    - Dynamic base-lot sizing (§6): Lots must be between base_lot and 5x base_lot. Resets down if smaller.
     """
     def __init__(self):
-        # Maps instrument symbol to the minimum lot size ever traded (the "base lot")
+        # Maps symbol to the minimum lot size ever executed (the base lot)
         self.base_lots: Dict[str, float] = {}
 
     def check_order(
@@ -41,25 +23,73 @@ class RiskManager:
         account_balance: float,
         account_equity: float,
         daily_dd_limit_amount: float,
-        open_positions: list
+        open_positions: list,
+        contract_size: float = 100000.0
     ) -> Dict[str, Any]:
         """
-        Validate an incoming order against hard risk limits and dynamic base lot rules.
+        Validate an incoming order proposal against hard risk rules.
         
         Returns:
-            A dictionary containing validation outcome:
+            Dict containing validation outcome:
             {
                 "approved": bool,
                 "reason": str,
                 "adjusted_lot_size": float
             }
         """
-        raise NotImplementedError("Scaffolded placeholder")
+        # --- 1. Hedging Prohibition Check (§7) ---
+        opposite_direction = "SELL" if direction == "BUY" else "BUY"
+        for pos in open_positions:
+            if pos.get("symbol") == symbol and pos.get("direction") == opposite_direction:
+                return {
+                    "approved": False,
+                    "reason": f"Hedging prohibited: existing {opposite_direction} position on {symbol}.",
+                    "adjusted_lot_size": lot_size
+                }
+
+        # --- 2. Single Trade Loss Cap Check (§5) ---
+        worst_case_loss = abs(entry_price - sl_price) * lot_size * contract_size
+        max_allowed_loss = daily_dd_limit_amount * 0.40
+        if worst_case_loss > max_allowed_loss:
+            return {
+                "approved": False,
+                "reason": (
+                    f"Single trade loss cap exceeded: potential loss of {worst_case_loss:.2f} "
+                    f"exceeds 40% of daily drawdown limit ({max_allowed_loss:.2f})."
+                ),
+                "adjusted_lot_size": lot_size
+            }
+
+        # --- 3. Dynamic Base-Lot sizing Check (§6) ---
+        current_base = self.base_lots.get(symbol)
+        if current_base is not None:
+            max_allowed_lot = current_base * 5.0
+            # If the trade is larger than 5x the current base, it is rejected
+            if lot_size > max_allowed_lot:
+                return {
+                    "approved": False,
+                    "reason": (
+                        f"Position size violation: lot size {lot_size} exceeds 5x cap "
+                        f"of current base lot {current_base} (max allowed: {max_allowed_lot})."
+                    ),
+                    "adjusted_lot_size": lot_size
+                }
+            # Note: lot_size < current_base is allowed because it resets the base lot down
+            # which is handled when the trade is executed via update_base_lot.
+
+        return {
+            "approved": True,
+            "reason": "",
+            "adjusted_lot_size": lot_size
+        }
 
     def update_base_lot(self, symbol: str, executed_lot_size: float) -> None:
         """
-        Call this when an order is successfully executed to update the base lot state.
+        Updates the minimum lot size (base lot) for a symbol upon execution.
         
-        Per FundedFirm §6, base lot resets down if executed lot size is smaller.
+        Per §6: if a trade smaller than current base lot is executed, base lot resets down.
         """
-        raise NotImplementedError("Scaffolded placeholder")
+        current_base = self.base_lots.get(symbol)
+        if current_base is None or executed_lot_size < current_base:
+            self.base_lots[symbol] = executed_lot_size
+
