@@ -1,0 +1,6 @@
+# Local configuration and credentials
+.env
+
+# Dependencies
+node_modules/
+package-lock.json
