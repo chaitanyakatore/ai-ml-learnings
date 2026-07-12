@@ -312,7 +312,6 @@ class BacktestEngine:
                         approved = False
 
                 if approved and self.risk_manager is not None:
-                if self.risk_manager is not None:
                     check = self.risk_manager.check_order(
                         symbol="MOCK",
                         direction="BUY",
