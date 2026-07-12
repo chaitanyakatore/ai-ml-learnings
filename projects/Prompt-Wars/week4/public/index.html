@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StadiumPulse AI — FIFA World Cup 2026 Ops & Fan Intelligence</title>
+  <!-- Outfit & Rajdhani Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- FontAwesome for icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <!-- App Container -->
+  <div id="app-container">
+    
+    <!-- Top Header -->
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-circle">
+          <i class="fa-solid fa-circle-nodes logo-icon"></i>
+        </div>
+        <div>
+          <h1>STADIUMPULSE AI</h1>
+          <p class="subtitle">FIFA WORLD CUP 2026 • CROWD DENSITY & OPERATIONS SYSTEM</p>
+        </div>
+      </div>
+      
+      <!-- Role Switcher Panel -->
+      <div id="role-switcher-container" class="glass-panel-small">
+        <span class="role-lbl">Select Workspace View:</span>
+        <div class="role-buttons">
+          <button id="btn-view-ops" class="btn-role active" onclick="switchRole('ops')">
+            <i class="fa-solid fa-headset"></i> Operations Lead
+          </button>
+          <button id="btn-view-volunteer" class="btn-role" onclick="switchRole('volunteer')">
+            <i class="fa-solid fa-handshake-angle"></i> Field Volunteer
+          </button>
+          <button id="btn-view-fan" class="btn-role" onclick="switchRole('fan')">
+            <i class="fa-solid fa-users"></i> Fan Concierge
+          </button>
+        </div>
+      </div>
+
+      <!-- Dev Panel Toggle Button -->
+      <button id="btn-toggle-dev" class="btn-dev-toggle" onclick="toggleDevConsole()">
+        <i class="fa-solid fa-terminal"></i> Simulation Controller
+      </button>
+    </header>
+
+    <!-- Simulation Control Room (In Flow - Collapsed by Default) -->
+    <div id="sim-control-panel" class="glass-panel collapsed">
+      <div class="sim-header">
+        <h3><i class="fa-solid fa-gears text-purple"></i> SIMULATION CONTROL ROOM</h3>
+        <span class="pulse-dot green"></span>
+      </div>
+      <div class="sim-body">
+        <p class="small-text">Select a World Cup scenario preset to trigger crowd surges and watch Gemini analyze flow dynamics in real-time:</p>
+        <div class="preset-buttons">
+          <button id="btn-preset-normal" class="btn-preset active" onclick="setPreset('normal')">
+            <i class="fa-solid fa-shield-halved"></i> Normal Flow
+          </button>
+          <button id="btn-preset-halftime" class="btn-preset" onclick="setPreset('halftime')">
+            <i class="fa-solid fa-hotdog"></i> Halftime Concourse Rush
+          </button>
+          <button id="btn-preset-gate_closure" class="btn-preset" onclick="setPreset('gate_closure')">
+            <i class="fa-solid fa-ban"></i> Gate 3 Security Closure
+          </button>
+          <button id="btn-preset-exit_surge" class="btn-preset" onclick="setPreset('exit_surge')">
+            <i class="fa-solid fa-train"></i> Post-Match Exit Surge
+          </button>
+        </div>
+        <div class="sim-meta mt-1">
+          <span class="small-text text-muted">Active Preset: <strong id="lbl-active-preset" class="text-purple">Normal Flow</strong></span>
+          <span class="small-text text-muted">Refresh Interval: <strong class="text-cyan">10s</strong></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Workspace Area -->
+    <main class="app-main">
+      
+      <!-- ==================== OPS VIEW ==================== -->
+      <div id="view-section-ops" class="view-section active">
+        <div class="ops-grid">
+          
+          <!-- Heatmap Card (Left) -->
+          <div class="grid-card-span-2 glass-panel flex-column">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-map-location-dot text-cyan"></i> LIVE VENUE HEATMAP</h2>
+              <span class="kpi-tag" id="lbl-kpi-alerts">0 Active Alerts</span>
+            </div>
+            
+            <!-- Time Travel / Predictive Controls -->
+            <div class="map-controls-container mb-1" style="display: flex; justify-content: space-between; align-items: center; background: rgba(5,7,15,0.4); padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.03);">
+              <span class="role-lbl" style="font-size: 0.75rem;"><i class="fa-solid fa-clock-rotate-left text-cyan"></i> Forecast Time Travel Mode:</span>
+              <div class="time-travel-slider-box" style="display: flex; gap: 0.35rem;">
+                <button id="btn-time-now" class="btn-role active" onclick="setTimeTravelMode('now')" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;">LIVE NOW</button>
+                <button id="btn-time-projected" class="btn-role" onclick="setTimeTravelMode('projected')" style="font-size: 0.75rem; padding: 0.35rem 0.75rem;"><i class="fa-solid fa-bolt"></i> +10 MINS (AI FORECAST)</button>
+              </div>
+            </div>
+
+            <div class="card-body center-content relative">
+              
+              <!-- Interactive SVG Stadium Map -->
+              <svg id="stadium-svg" viewBox="0 0 800 500" class="stadium-map">
+                <!-- Defs for glowing shadows -->
+                <defs>
+                  <filter id="glow-normal" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                  </filter>
+                  <filter id="glow-elevated" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="8" result="blur" />
+                    <feComponentTransfer>
+                      <feFuncA type="linear" slope="0.8"/>
+                    </feComponentTransfer>
+                    <feMerge>
+                      <feMergeNode/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                  <filter id="glow-critical" x="-40%" y="-40%" width="180%" height="180%">
+                    <feGaussianBlur stdDeviation="12" result="blur" />
+                    <feComponentTransfer>
+                      <feFuncA type="linear" slope="1"/>
+                    </feComponentTransfer>
+                    <feMerge>
+                      <feMergeNode/>
+                      <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                <!-- Background Track / Boundary -->
+                <rect x="10" y="10" width="780" height="480" rx="30" fill="rgba(15, 23, 42, 0.4)" stroke="rgba(255, 255, 255, 0.05)" stroke-width="2"/>
+
+                <!-- Outer Gates Outer Perimeter -->
+                <ellipse cx="400" cy="250" rx="360" ry="210" fill="none" stroke="rgba(255, 255, 255, 0.1)" stroke-width="3" stroke-dasharray="10 15"/>
+
+                <!-- Gates (Intersections) -->
+                <!-- Gate 1 (North) -->
+                <path id="gate_1" class="svg-zone gate" d="M 350,30 L 450,30 L 440,70 L 360,70 Z" />
+                <text x="400" y="55" class="svg-label">GATE 1 (NORTH)</text>
+
+                <!-- Gate 2 (East) -->
+                <path id="gate_2" class="svg-zone gate" d="M 730,200 L 730,300 L 690,290 L 690,210 Z" />
+                <text x="710" y="255" class="svg-label rotate-right">GATE 2 (EAST)</text>
+
+                <!-- Gate 3 (South) -->
+                <path id="gate_3" class="svg-zone gate" d="M 350,470 L 450,470 L 440,430 L 360,430 Z" />
+                <text x="400" y="455" class="svg-label">GATE 3 (SOUTH)</text>
+
+                <!-- Gate 4 (West) -->
+                <path id="gate_4" class="svg-zone gate" d="M 70,200 L 70,300 L 110,290 L 110,210 Z" />
+                <text x="90" y="255" class="svg-label rotate-left">GATE 4 (WEST)</text>
+
+                <!-- Concourses (Mid Ring segments) -->
+                <!-- Concourse A (North) -->
+                <path id="concourse_a" class="svg-zone concourse" d="M 220,130 A 240 140 0 0 1 580,130 L 520,165 A 170 100 0 0 0 280,165 Z" />
+                <text x="400" y="152" class="svg-label">CONCOURSE A</text>
+
+                <!-- Concourse B (East) -->
+                <path id="concourse_b" class="svg-zone concourse" d="M 580,130 A 240 140 0 0 1 580,370 L 520,335 A 170 100 0 0 0 520,165 Z" />
+                <text x="560" y="255" class="svg-label">CONCOURSE B</text>
+
+                <!-- Concourse C (South) -->
+                <path id="concourse_c" class="svg-zone concourse" d="M 580,370 A 240 140 0 0 1 220,370 L 280,335 A 170 100 0 0 0 520,335 Z" />
+                <text x="400" y="360" class="svg-label">CONCOURSE C</text>
+
+                <!-- Concourse D (West) -->
+                <path id="concourse_d" class="svg-zone concourse" d="M 220,370 A 240 140 0 0 1 220,130 L 280,165 A 170 100 0 0 0 280,335 Z" />
+                <text x="240" y="255" class="svg-label">CONCOURSE D</text>
+
+                <!-- Inner Pitch/Center Stadium Area -->
+                <ellipse cx="400" cy="250" rx="190" ry="110" fill="none" stroke="rgba(0, 240, 255, 0.2)" stroke-width="3"/>
+                <rect x="290" y="190" width="220" height="120" rx="10" fill="rgba(16, 185, 129, 0.08)" stroke="rgba(16, 185, 129, 0.4)" stroke-width="2"/>
+                <line x1="400" y1="190" x2="400" y2="310" stroke="rgba(16, 185, 129, 0.4)" stroke-width="2"/>
+                <circle cx="400" cy="250" r="30" fill="none" stroke="rgba(16, 185, 129, 0.4)" stroke-width="2"/>
+                <text x="400" y="255" class="pitch-label">WC 2026 PLAYFIELD</text>
+
+                <!-- External Transit Hubs -->
+                <!-- Transit Hub X (North - Light Rail) -->
+                <g class="transit-group">
+                  <rect id="transit_hub_x" class="svg-zone transit" x="250" y="440" width="100" height="30" rx="5" />
+                  <text x="300" y="458" class="svg-label transit-label">TRANSIT HUB X</text>
+                  <circle cx="235" cy="455" r="5" fill="#00f0ff" />
+                  <line x1="235" y1="455" x2="250" y2="455" stroke="#00f0ff" stroke-width="1.5"/>
+                </g>
+
+                <!-- Transit Hub Y (South - Shuttle Terminal) -->
+                <g class="transit-group">
+                  <rect id="transit_hub_y" class="svg-zone transit" x="450" y="440" width="100" height="30" rx="5" />
+                  <text x="500" y="458" class="svg-label transit-label">TRANSIT HUB Y</text>
+                  <circle cx="565" cy="455" r="5" fill="#f59e0b" />
+                  <line x1="550" y1="455" x2="565" y2="455" stroke="#f59e0b" stroke-width="1.5"/>
+                </g>
+              </svg>
+
+              <!-- Dynamic Map Overlay Legend -->
+              <div class="map-legend">
+                <div class="legend-item"><span class="legend-box green"></span> Normal (&lt;50%)</div>
+                <div class="legend-item"><span class="legend-box orange"></span> Elevated (50-80%)</div>
+                <div class="legend-item"><span class="legend-box red"></span> Critical (&gt;80%)</div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- KPI Cards & Inspector Panel (Right) -->
+          <div class="grid-card-span-1 flex-column gap-1">
+            
+            <!-- Quick Stats Card -->
+            <div class="glass-panel kpi-card-container">
+              <div class="kpi-mini-card">
+                <span class="kpi-title">AVG OCCUPANCY</span>
+                <span id="lbl-kpi-avg-occ" class="kpi-value text-cyan">21%</span>
+              </div>
+              <div class="kpi-mini-card">
+                <span class="kpi-title">TOTAL STAFF</span>
+                <span id="lbl-kpi-total-staff" class="kpi-value text-purple">86</span>
+              </div>
+            </div>
+
+            <!-- Detailed Zone Inspector Panel -->
+            <div class="glass-panel flex-grow" id="zone-inspector">
+              <div class="card-header">
+                <h2><i class="fa-solid fa-circle-info text-cyan"></i> ZONE INSPECTOR</h2>
+              </div>
+              <div id="inspector-placeholder" class="center-content flex-column text-muted height-full">
+                <i class="fa-solid fa-arrow-pointer icon-large mb-1"></i>
+                <p>Click any stadium zone on the heatmap to view live telemetry and Gemini AI assessments.</p>
+              </div>
+              <div id="inspector-content" class="hidden">
+                <div class="inspector-section-header">
+                  <h3 id="inspect-zone-name">Gate 3 (South Entrance)</h3>
+                  <span id="inspect-zone-badge" class="badge bg-red">CRITICAL</span>
+                </div>
+                <div class="telemetry-grid">
+                  <div class="telemetry-box">
+                    <span class="lbl">Occupancy</span>
+                    <strong id="inspect-occupancy">74%</strong>
+                  </div>
+                  <div class="telemetry-box">
+                    <span class="lbl">Flow Rate</span>
+                    <strong id="inspect-flow">280/min</strong>
+                  </div>
+                  <div class="telemetry-box">
+                    <span class="lbl">Trend</span>
+                    <strong id="inspect-trend" class="text-warning">Increasing</strong>
+                  </div>
+                  <div class="telemetry-box">
+                    <span class="lbl">Volunteers</span>
+                    <strong id="inspect-staff">15</strong>
+                  </div>
+                </div>
+
+                <!-- CCTV Live Diagnostics Overlay -->
+                <div class="cctv-vision-container mb-1" style="background: rgba(5,7,15,0.6); border: 1px solid rgba(0, 240, 255, 0.1); border-radius: 8px; padding: 0.65rem 0.85rem; font-family: 'Rajdhani', sans-serif;">
+                  <div class="cctv-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 240, 255, 0.1); padding-bottom: 0.35rem; margin-bottom: 0.5rem;">
+                    <span class="text-cyan" style="font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;"><i class="fa-solid fa-video blink text-danger"></i> CCTV VISION ANALYTICS</span>
+                    <span id="cctv-cam-id" style="font-size: 0.7rem; color: var(--text-muted);">CAM-ID: CCTV_08_G3</span>
+                  </div>
+                  <div class="cctv-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; font-weight: 600;">
+                    <div>QUEUE ESTIMATION: <strong id="cctv-queue-len" class="text-cyan">--</strong></div>
+                    <div>OBJECTS DETECTED: <strong id="cctv-object-count" class="text-cyan">--</strong></div>
+                    <div>CROWD DENSITY: <strong id="cctv-density" class="text-cyan">--</strong></div>
+                    <div>TRACKING STATUS: <strong class="text-warning">ACTIVE VECTOR</strong></div>
+                  </div>
+                </div>
+
+                <div class="ai-assessment-box mt-1">
+                  <div class="ai-box-title">
+                    <i class="fa-solid fa-brain text-purple"></i> GEMINI REASONING ASSESSMENT
+                  </div>
+                  <div class="ai-box-body">
+                    <div class="ai-field">
+                      <span class="ai-field-title">Flow Explanation</span>
+                      <p id="inspect-ai-explanation">Crowd backing up due to ticket scanner delay and heavy entry rate.</p>
+                    </div>
+                    <div class="ai-field">
+                      <span class="ai-field-title">Actionable Recommendation</span>
+                      <p id="inspect-ai-action" class="text-cyan font-medium">Open auxiliary gate 3B and redirect ticket lines.</p>
+                    </div>
+                    <div class="ai-field">
+                      <span class="ai-field-title">Dynamic Staff Reallocation</span>
+                      <p id="inspect-ai-reallocation" class="text-purple font-medium">Move 3 staff members from Gate 1 to Gate 3.</p>
+                    </div>
+                    <div class="ai-field">
+                      <span class="ai-field-title">ETA to Critical Gridlock</span>
+                      <p id="inspect-ai-eta" class="text-danger"><strong>9 minutes</strong></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- AI Operations Briefing (Bottom Left) -->
+          <div class="grid-card-span-2 glass-panel flex-column">
+            <div class="card-header justify-between">
+              <h2><i class="fa-solid fa-chart-line text-purple"></i> AI TOURNAMENT INCIDENT BRIEFING (EXECUTIVE SUMMARY)</h2>
+              <button id="btn-refresh-summary" class="btn-primary" onclick="loadIncidentSummary()">
+                <i class="fa-solid fa-rotate"></i> Regenerate Summary
+              </button>
+            </div>
+            <div class="card-body">
+              <div id="ops-summary-loading" class="center-content hidden py-2">
+                <i class="fa-solid fa-spinner fa-spin text-purple icon-large mr-1"></i>
+                <span>Gemini is compiling stadium operations logs...</span>
+              </div>
+              <div id="ops-summary-content" class="ops-briefing-text font-inter">
+                Loading executive operations briefing...
+              </div>
+            </div>
+          </div>
+
+          <!-- Operations Dispatch Controller (Bottom Right) -->
+          <div class="grid-card-span-1 glass-panel flex-column">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-paper-plane text-cyan"></i> ACTION DISPATCH CENTER</h2>
+            </div>
+            <div class="card-body flex-column justify-between gap-1">
+              <p class="small-text text-muted">Authorise and dispatch Gemini's recommendations to field volunteers and broadcast warnings to fan dashboards:</p>
+              
+              <div class="dispatch-form flex-column gap-05">
+                <div>
+                  <span class="small-title">Target Incident Zone:</span>
+                  <select id="sel-dispatch-zone" class="form-input">
+                    <option value="">Select a zone...</option>
+                  </select>
+                </div>
+                <div>
+                  <span class="small-title">Mitigation Action to Send:</span>
+                  <textarea id="txt-dispatch-action" rows="2" class="form-input text-area" placeholder="AI recommended action will load here..."></textarea>
+                </div>
+                <div>
+                  <span class="small-title">Staff Reallocation Action:</span>
+                  <input type="text" id="txt-dispatch-reallocation" class="form-input" placeholder="AI staff reallocation suggestion will load here..."/>
+                </div>
+              </div>
+
+              <button id="btn-dispatch-action" class="btn-success width-full py-1" onclick="dispatchAction()">
+                <i class="fa-solid fa-bullhorn"></i> DISPATCH DECISION TO STADIUM
+              </button>
+
+              <!-- Compile AI Broadcast Package Button & Card -->
+              <button id="btn-generate-broadcast" class="btn-primary width-full py-1 mt-05" onclick="generateBroadcastPackage()" style="margin-top: 0.5rem;" disabled>
+                <i class="fa-solid fa-tower-broadcast"></i> COMPILE AI BROADCASTS
+              </button>
+
+              <div id="broadcast-package-box" class="glass-panel-small mt-1 hidden" style="border-color: rgba(0, 240, 255, 0.2); background: rgba(5,7,15,0.85); width: 100%; margin-top: 0.75rem;">
+                <div class="broadcast-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 0.35rem; margin-bottom: 0.5rem;">
+                  <strong class="text-cyan" style="font-size: 0.75rem; font-family: 'Rajdhani', sans-serif;">AI BROADCAST PACKAGE</strong>
+                  <button class="btn-role" onclick="document.getElementById('broadcast-package-box').classList.add('hidden')" style="font-size: 0.65rem; padding: 0.15rem 0.35rem; background: transparent; border: none; color: var(--text-muted); cursor: pointer;">CLOSE</button>
+                </div>
+                <div class="broadcast-body" style="font-size: 0.8rem; line-height: 1.45;">
+                  <div class="broadcast-field mb-1" style="margin-bottom: 0.65rem;">
+                    <span class="small-title" style="font-size: 0.65rem;">Stadium Speaker Announcement Script</span>
+                    <blockquote id="broadcast-pa-text" style="background: rgba(5,7,15,0.5); padding: 0.4rem; border-left: 2px solid var(--neon-cyan); border-radius: 4px; font-style: italic; color: #cbd5e1; font-size: 0.75rem; margin-top: 0.15rem;">PA text here...</blockquote>
+                  </div>
+                  <div class="broadcast-field">
+                    <span class="small-title" style="font-size: 0.65rem;">Multilingual App Push Alerts</span>
+                    <div class="translation-tabs" style="display: flex; gap: 0.2rem; margin-top: 0.15rem; margin-bottom: 0.25rem;">
+                      <button class="btn-role active" id="tab-push-en" onclick="setPushTab('en')" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">EN</button>
+                      <button class="btn-role" id="tab-push-es" onclick="setPushTab('es')" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">ES</button>
+                      <button class="btn-role" id="tab-push-fr" onclick="setPushTab('fr')" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">FR</button>
+                      <button class="btn-role" id="tab-push-pt" onclick="setPushTab('pt')" style="font-size: 0.6rem; padding: 0.15rem 0.3rem;">PT</button>
+                    </div>
+                    <p id="broadcast-push-text" style="background: rgba(5,7,15,0.5); padding: 0.4rem; border-radius: 4px; color: #cbd5e1; font-weight: 500; font-size: 0.75rem;">Push notification translations...</p>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Operations Audit Log Timeline (Full Bottom row) -->
+        <div class="grid-card-span-3 glass-panel" style="grid-column: span 3; margin-top: 0.5rem;">
+          <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.65rem; margin-bottom: 0.85rem;">
+            <h2><i class="fa-solid fa-clock-rotate-left text-cyan"></i> TOURNAMENT OPERATIONS AUDIT TIMELINE</h2>
+            <span class="small-text text-muted" style="font-size: 0.7rem; font-weight: 600;">Chronological Operations Feed</span>
+          </div>
+          <div class="card-body" style="max-height: 180px; overflow-y: auto; padding: 0 0.5rem;">
+            <div id="ops-audit-timeline" style="display: flex; flex-direction: column; gap: 0.5rem; font-family: 'Rajdhani', sans-serif;">
+              <div class="timeline-empty-message text-muted text-center py-2" style="font-size: 0.8rem;">
+                No logs recorded. Switch simulation scenarios to populate telemetry events.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+      <!-- ==================== VOLUNTEER VIEW ==================== -->
+      <div id="view-section-volunteer" class="view-section">
+        <div class="volunteer-view-container">
+          <div class="view-title-bar">
+            <h2><i class="fa-solid fa-handshake-angle text-cyan"></i> FIELD VOLUNTEER DISPATCH FEED</h2>
+            <span class="badge bg-purple" id="lbl-volunteer-task-count">0 TASKS ACTIVE</span>
+          </div>
+
+          <!-- Task Feed Area -->
+          <div id="volunteer-task-list" class="task-grid">
+            <!-- Dynamic task cards load here -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="volunteer-empty-state" class="center-content flex-column text-muted py-5 glass-panel">
+            <i class="fa-solid fa-circle-check icon-huge text-green mb-1"></i>
+            <h3>All Zones Clear</h3>
+            <p>No operations dispatches are currently active. Monitor radio channel 4 and stand by.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== FAN VIEW ==================== -->
+      <div id="view-section-fan" class="view-section">
+        <div class="fan-grid">
+          
+          <!-- Wayfinding Route Finder Panel -->
+          <div class="glass-panel flex-column gap-1">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-diamond-turn-right text-cyan"></i> DYNAMIC ROUTE FINDER</h2>
+            </div>
+            <div class="card-body flex-column gap-1">
+              <p class="small-text text-muted">Select your assigned gate and target seating section to find the safest, fastest route based on live crowd densities:</p>
+              
+              <div class="route-selectors flex-column gap-05">
+                <div>
+                  <label for="sel-fan-gate" class="small-title">Entering Stadium From:</label>
+                  <select id="sel-fan-gate" class="form-input" onchange="calculateFanRoute()">
+                    <option value="gate_1">Gate 1 (North Entrance)</option>
+                    <option value="gate_2">Gate 2 (East Entrance)</option>
+                    <option value="gate_3">Gate 3 (South Entrance)</option>
+                    <option value="gate_4" selected>Gate 4 (West Entrance)</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="sel-fan-section" class="small-title">Target Seating Section:</label>
+                  <select id="sel-fan-section" class="form-input" onchange="calculateFanRoute()">
+                    <option value="105">Section 105 (North Stand)</option>
+                    <option value="115">Section 115 (East Stand)</option>
+                    <option value="210" selected>Section 210 (South Stand)</option>
+                    <option value="225">Section 225 (West Stand)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Computed Route Result Card -->
+              <div id="fan-route-result" class="glass-panel-small flex-column gap-05 mt-1">
+                <span class="small-title text-cyan"><i class="fa-solid fa-route"></i> SUGGESTED CLEAR ROUTE</span>
+                <div class="route-flow-line" id="fan-route-path">
+                  <span>Gate 4</span> <i class="fa-solid fa-arrow-right text-muted"></i> <span>Concourse D</span> <i class="fa-solid fa-arrow-right text-muted"></i> <span>Section 210</span>
+                </div>
+                <div id="fan-route-safety-status" class="status-warning mt-05">
+                  <i class="fa-solid fa-triangle-exclamation"></i> Concourse C is currently congested, but this route bypasses the backup.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fan Concierge Chat (Right Column) -->
+          <div class="glass-panel flex-column" style="grid-column: span 2;">
+            <div class="card-header justify-between">
+              <h2><i class="fa-solid fa-comments text-purple"></i> GEMINI MULTILINGUAL FAN CONCIERGE</h2>
+              <div class="language-dropdown-container">
+                <i class="fa-solid fa-globe text-purple mr-05"></i>
+                <select id="sel-fan-lang" class="form-input-small">
+                  <option value="English" selected>English</option>
+                  <option value="Español">Español</option>
+                  <option value="Français">Français</option>
+                  <option value="Português">Português</option>
+                </select>
+              </div>
+            </div>
+            
+            <!-- Dynamic Broadcast Alert Banner for Fans -->
+            <div id="fan-broadcast-alert" class="broadcast-banner hidden">
+              <div class="broadcast-banner-inner">
+                <i class="fa-solid fa-circle-exclamation blink"></i>
+                <span id="fan-broadcast-alert-text">Warning: Gate 3 is surging. Fans are advised to redirect to Gate 2.</span>
+              </div>
+            </div>
+
+            <!-- Chat Window -->
+            <div class="chat-window-container flex-column flex-grow">
+              <div id="chat-messages-box" class="chat-messages-box">
+                <!-- Welcome greeting -->
+                <div class="chat-msg bot">
+                  <div class="msg-avatar"><i class="fa-solid fa-circle-nodes"></i></div>
+                  <div class="msg-bubble">
+                    <p>Welcome to the <strong>FIFA World Cup 2026 Fan Concierge</strong>! ⚽️</p>
+                    <p>I can help you navigate the stadium, guide you around crowd congestion, look up your seating gate, or answer questions about bag policies and local transit. How can I assist you today?</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Chat Input Area -->
+              <div class="chat-input-bar">
+                <input type="text" id="txt-chat-input" placeholder="Ask about transit, bags, or seating section paths..." onkeypress="handleChatKeyPress(event)"/>
+                <button id="btn-chat-send" class="btn-primary" onclick="sendChatMessage()">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
