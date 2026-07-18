@@ -55,8 +55,8 @@ export function pageAuth(role) {
   };
 }
 
-// POST: Authenticate user login (Rate-limited: 5 requests / 15 mins)
-router.post('/login', rateLimiter(5, 15 * 60 * 1000, 'Authentication Gate'), (req, res) => {
+// POST: Authenticate user login (Rate-limited: 60 requests / 15 mins)
+router.post('/login', rateLimiter(60, 15 * 60 * 1000, 'Authentication Gate'), (req, res) => {
   const { username, password } = req.body;
   const user = db.findByUsername(username);
 
@@ -86,8 +86,8 @@ router.post('/login', rateLimiter(5, 15 * 60 * 1000, 'Authentication Gate'), (re
   });
 });
 
-// POST: Register new user record (Rate-limited: 5 requests / 15 mins)
-router.post('/register', rateLimiter(5, 15 * 60 * 1000, 'Registration Gate'), (req, res) => {
+// POST: Register new user record (Rate-limited: 60 requests / 15 mins)
+router.post('/register', rateLimiter(60, 15 * 60 * 1000, 'Registration Gate'), (req, res) => {
   const { username, password, role, name, securityQuestion, securityAnswer } = req.body;
   
   if (!username || !password || !role || !securityQuestion || !securityAnswer) {
@@ -112,8 +112,8 @@ router.post('/register', rateLimiter(5, 15 * 60 * 1000, 'Registration Gate'), (r
   }
 });
 
-// POST: Retrieve security question (Rate-limited: 5 requests / 15 mins)
-router.post('/forgot-question', rateLimiter(5, 15 * 60 * 1000, 'Forgot Password Retrieval'), (req, res) => {
+// POST: Retrieve security question (Rate-limited: 60 requests / 15 mins)
+router.post('/forgot-question', rateLimiter(60, 15 * 60 * 1000, 'Forgot Password Retrieval'), (req, res) => {
   const { username } = req.body;
   if (!username) return res.status(400).json({ error: 'Username is required.' });
 
@@ -125,8 +125,8 @@ router.post('/forgot-question', rateLimiter(5, 15 * 60 * 1000, 'Forgot Password 
   res.json({ question: user.securityQuestion });
 });
 
-// POST: Verify security answer and reset password (Rate-limited: 5 requests / 15 mins)
-router.post('/reset-password', rateLimiter(5, 15 * 60 * 1000, 'Password Reset Execution'), (req, res) => {
+// POST: Verify security answer and reset password (Rate-limited: 60 requests / 15 mins)
+router.post('/reset-password', rateLimiter(60, 15 * 60 * 1000, 'Password Reset Execution'), (req, res) => {
   const { username, answer, new_password } = req.body;
   if (!username || !answer || !new_password) {
     return res.status(400).json({ error: 'Username, answer, and new password are required.' });
@@ -159,8 +159,8 @@ router.post('/logout', (req, res) => {
   res.json({ message: 'Session successfully cleared. Redirecting...' });
 });
 
-// GET: Current live stadium state (Rate-limited: 100 requests / 15 mins)
-router.get('/stadium-state', rateLimiter(100, 15 * 60 * 1000, 'Global API'), (req, res) => {
+// GET: Current live stadium state (Rate-limited: 1000 requests / 15 mins)
+router.get('/stadium-state', rateLimiter(1000, 15 * 60 * 1000, 'Global API'), (req, res) => {
   res.json({
     zones,
     activeDispatches,
@@ -170,7 +170,7 @@ router.get('/stadium-state', rateLimiter(100, 15 * 60 * 1000, 'Global API'), (re
 });
 
 // POST: Trigger simulation scenario preset (Dev tool)
-router.post('/simulate-event', rateLimiter(100, 15 * 60 * 1000, 'Global API'), async (req, res) => {
+router.post('/simulate-event', rateLimiter(1000, 15 * 60 * 1000, 'Global API'), async (req, res) => {
   const { preset } = req.body;
   if (!preset) return res.status(400).json({ error: 'Preset name is required.' });
   
@@ -185,7 +185,7 @@ router.post('/simulate-event', rateLimiter(100, 15 * 60 * 1000, 'Global API'), a
 });
 
 // POST: Transmit operational dispatch order (Protected: Operations Leads only)
-router.post('/dispatch-action', authMiddleware(['ops']), rateLimiter(100, 15 * 60 * 1000, 'Global API'), (req, res) => {
+router.post('/dispatch-action', authMiddleware(['ops']), rateLimiter(1000, 15 * 60 * 1000, 'Global API'), (req, res) => {
   const { zone_id, action_text, staffing_reallocation_text } = req.body;
   const targetZone = zones.find(z => z.zone_id === zone_id);
 
@@ -237,7 +237,7 @@ router.post('/dispatch-action', authMiddleware(['ops']), rateLimiter(100, 15 * 6
 });
 
 // POST: Acknowledge/Resolve active dispatch (Protected: Staff only)
-router.post('/acknowledge', authMiddleware(['volunteer']), rateLimiter(100, 15 * 60 * 1000, 'Global API'), (req, res) => {
+router.post('/acknowledge', authMiddleware(['volunteer']), rateLimiter(1000, 15 * 60 * 1000, 'Global API'), (req, res) => {
   const { dispatch_id } = req.body;
   const idx = activeDispatches.findIndex(d => d.dispatch_id === dispatch_id);
 
@@ -278,7 +278,7 @@ router.post('/acknowledge', authMiddleware(['volunteer']), rateLimiter(100, 15 *
 });
 
 // POST: Report Crowd Incident from Mobile Volunteers (Protected: Staff only)
-router.post('/report-incident', authMiddleware(['volunteer']), rateLimiter(100, 15 * 60 * 1000, 'Global API'), (req, res) => {
+router.post('/report-incident', authMiddleware(['volunteer']), rateLimiter(1000, 15 * 60 * 1000, 'Global API'), (req, res) => {
   const { zone_id, incident_description, severity } = req.body;
   const targetZone = zones.find(z => z.zone_id === zone_id);
 
