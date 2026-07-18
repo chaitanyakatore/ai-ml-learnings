@@ -56,9 +56,9 @@ export function pageAuth(role) {
 }
 
 // POST: Authenticate user login (Rate-limited: 60 requests / 15 mins)
-router.post('/login', rateLimiter(60, 15 * 60 * 1000, 'Authentication Gate'), (req, res) => {
+router.post('/login', rateLimiter(60, 15 * 60 * 1000, 'Authentication Gate'), async (req, res) => {
   const { username, password } = req.body;
-  const user = db.findByUsername(username);
+  const user = await db.findByUsername(username);
 
   if (!user || !verifyPassword(password, user.passwordHash)) {
     return res.status(401).json({ error: 'Invalid username or password credentials.' });
@@ -87,7 +87,7 @@ router.post('/login', rateLimiter(60, 15 * 60 * 1000, 'Authentication Gate'), (r
 });
 
 // POST: Register new user record (Rate-limited: 60 requests / 15 mins)
-router.post('/register', rateLimiter(60, 15 * 60 * 1000, 'Registration Gate'), (req, res) => {
+router.post('/register', rateLimiter(60, 15 * 60 * 1000, 'Registration Gate'), async (req, res) => {
   const { username, password, role, name, securityQuestion, securityAnswer } = req.body;
   
   if (!username || !password || !role || !securityQuestion || !securityAnswer) {
@@ -95,7 +95,7 @@ router.post('/register', rateLimiter(60, 15 * 60 * 1000, 'Registration Gate'), (
   }
 
   try {
-    const newUser = db.createUser({
+    const newUser = await db.createUser({
       username,
       password,
       role,
@@ -113,11 +113,11 @@ router.post('/register', rateLimiter(60, 15 * 60 * 1000, 'Registration Gate'), (
 });
 
 // POST: Retrieve security question (Rate-limited: 60 requests / 15 mins)
-router.post('/forgot-question', rateLimiter(60, 15 * 60 * 1000, 'Forgot Password Retrieval'), (req, res) => {
+router.post('/forgot-question', rateLimiter(60, 15 * 60 * 1000, 'Forgot Password Retrieval'), async (req, res) => {
   const { username } = req.body;
   if (!username) return res.status(400).json({ error: 'Username is required.' });
 
-  const user = db.findByUsername(username);
+  const user = await db.findByUsername(username);
   if (!user) {
     return res.status(404).json({ error: 'Username not found in operations registry.' });
   }
@@ -126,13 +126,13 @@ router.post('/forgot-question', rateLimiter(60, 15 * 60 * 1000, 'Forgot Password
 });
 
 // POST: Verify security answer and reset password (Rate-limited: 60 requests / 15 mins)
-router.post('/reset-password', rateLimiter(60, 15 * 60 * 1000, 'Password Reset Execution'), (req, res) => {
+router.post('/reset-password', rateLimiter(60, 15 * 60 * 1000, 'Password Reset Execution'), async (req, res) => {
   const { username, answer, new_password } = req.body;
   if (!username || !answer || !new_password) {
     return res.status(400).json({ error: 'Username, answer, and new password are required.' });
   }
 
-  const user = db.findByUsername(username);
+  const user = await db.findByUsername(username);
   if (!user) {
     return res.status(404).json({ error: 'User record not found.' });
   }
@@ -146,7 +146,7 @@ router.post('/reset-password', rateLimiter(60, 15 * 60 * 1000, 'Password Reset E
   }
 
   try {
-    db.updatePassword(username, new_password);
+    await db.updatePassword(username, new_password);
     res.json({ message: 'Password reset successful. You may now authenticate.' });
   } catch (err) {
     res.status(500).json({ error: 'Database transaction failed.' });
