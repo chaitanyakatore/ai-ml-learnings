@@ -12,8 +12,62 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Initialize Gemini Client
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+// Initialize Gemini Client only if Ollama is not enabled to prevent startup errors
+const ai = (process.env.USE_OLLAMA === 'true') ? null : new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+// Unified AI model execution helper (routes to Gemini or local Ollama)
+async function callAIModel(prompt, jsonMode = false, schema = null) {
+  const useOllama = process.env.USE_OLLAMA === 'true';
+  
+  if (useOllama) {
+    const host = process.env.OLLAMA_HOST || 'http://localhost:11434';
+    const model = process.env.OLLAMA_MODEL || 'gemma2';
+    
+    console.log(`Routing AI call to Ollama (model: ${model}, host: ${host})...`);
+    
+    let ollamaPrompt = prompt;
+    if (jsonMode && schema) {
+      ollamaPrompt += `\n\nYou MUST return a JSON object conforming exactly to this structure:\n${JSON.stringify(schema, null, 2)}`;
+    }
+    
+    const response = await fetch(`${host}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        prompt: ollamaPrompt,
+        stream: false,
+        format: jsonMode ? 'json' : undefined,
+        options: {
+          temperature: 0.15
+        }
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Ollama request failed with status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.response;
+  } else {
+    // Standard Gemini Client call
+    const config = {};
+    if (jsonMode) {
+      config.responseMimeType = 'application/json';
+      if (schema) {
+        config.responseJsonSchema = schema;
+      }
+    }
+    
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.5-flash',
+      contents: prompt,
+      config: config
+    });
+    return response.text;
+  }
+}
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
@@ -88,25 +142,18 @@ You must output a JSON response containing an 'assessments' array of objects con
 Look at the other zones for staffing donors (e.g. Gate 1, 2, 4 if their occupancy is under 30%).
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseJsonSchema: {
-          type: "object",
-          properties: {
-            assessments: {
-              type: "array",
-              items: riskSchema
-            }
-          },
-          required: ["assessments"]
-        },
+    const responseText = await callAIModel(prompt, true, {
+      type: "object",
+      properties: {
+        assessments: {
+          type: "array",
+          items: riskSchema
+        }
       },
+      required: ["assessments"]
     });
 
-    const parsedResult = JSON.parse(response.text);
+    const parsedResult = JSON.parse(responseText);
     if (parsedResult.assessments && Array.isArray(parsedResult.assessments)) {
       parsedResult.assessments.forEach(assessment => {
         const zone = zones.find(z => z.zone_id === assessment.zone_id);
@@ -500,12 +547,8 @@ Generate a premium, concise executive briefing (2 paragraphs maximum) summarizin
 Use professional stadium-operations jargon (e.g. egress, ingress, crowd control, staffing optimization, bottlenecks). Use bullet points for key metrics (e.g., average occupancy, total active incidents).
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
-    });
-
-    latestIncidentSummary = response.text;
+    const responseText = await callAIModel(prompt);
+    latestIncidentSummary = responseText;
     res.json({ summary: latestIncidentSummary });
   } catch (error) {
     console.error('Error generating incident summary:', error);
@@ -559,10 +602,7 @@ User Query: "${message}"
 Write a warm, concise, conversational response. Keep it under 4 paragraphs. Format key details with bullet points.
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
-    });
+    const responseText = await callAIModel(prompt);
 
     // Append to audit log
     auditLog.unshift({
@@ -573,7 +613,7 @@ Write a warm, concise, conversational response. Keep it under 4 paragraphs. Form
     });
     if (auditLog.length > 20) auditLog.pop();
 
-    res.json({ response: response.text });
+    res.json({ response: responseText });
   } catch (error) {
     console.error('Error in Fan Chat:', error);
     res.json({ response: 'I am currently having difficulty connecting to my reasoning node. Please consult stadium volunteers for assistance.' });
@@ -603,32 +643,25 @@ Generate a broadcast package for this incident. You must return a JSON response 
    - "pt": Portuguese
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.5-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-        responseJsonSchema: {
+    const responseText = await callAIModel(prompt, true, {
+      type: "object",
+      properties: {
+        pa_audio_script: { type: "string" },
+        push_notifications: {
           type: "object",
           properties: {
-            pa_audio_script: { type: "string" },
-            push_notifications: {
-              type: "object",
-              properties: {
-                en: { type: "string" },
-                es: { type: "string" },
-                fr: { type: "string" },
-                pt: { type: "string" }
-              },
-              required: ["en", "es", "fr", "pt"]
-            }
+            en: { type: "string" },
+            es: { type: "string" },
+            fr: { type: "string" },
+            pt: { type: "string" }
           },
-          required: ["pa_audio_script", "push_notifications"]
+          required: ["en", "es", "fr", "pt"]
         }
-      }
+      },
+      required: ["pa_audio_script", "push_notifications"]
     });
 
-    const parsed = JSON.parse(response.text);
+    const parsed = JSON.parse(responseText);
 
     // Append to audit log
     auditLog.unshift({
