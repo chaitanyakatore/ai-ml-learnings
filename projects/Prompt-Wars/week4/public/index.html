@@ -198,6 +198,8 @@
                   <circle cx="565" cy="455" r="5" fill="#f59e0b" />
                   <line x1="550" y1="455" x2="565" y2="455" stroke="#f59e0b" stroke-width="1.5"/>
                 </g>
+                <!-- Visual Wayfinding Pulsing Path -->
+                <path id="svg-navigation-line" d="" fill="none" stroke="var(--neon-cyan)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" class="hidden" style="transition: stroke 0.3s ease; stroke-dasharray: 10, 8;" />
               </svg>
 
               <!-- Dynamic Map Overlay Legend -->
@@ -212,15 +214,45 @@
           <!-- KPI Cards & Inspector Panel (Right) -->
           <div class="grid-card-span-1 flex-column gap-1">
             
-            <!-- Quick Stats Card -->
-            <div class="glass-panel kpi-card-container">
-              <div class="kpi-mini-card">
-                <span class="kpi-title">AVG OCCUPANCY</span>
-                <span id="lbl-kpi-avg-occ" class="kpi-value text-cyan">21%</span>
+            <!-- Quick Stats Card with HUD Gauges -->
+            <div class="glass-panel kpi-card-container" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; padding: 0.75rem;">
+              <div class="kpi-mini-card flex-column align-center" style="padding: 0.5rem; text-align: center;">
+                <span class="kpi-title" style="margin-bottom: 0.5rem;">AVG OCCUPANCY</span>
+                <!-- Circular gauge ring -->
+                <div class="hud-gauge-ring" id="gauge-avg-occ" style="width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--neon-cyan) 0%, rgba(255,255,255,0.05) 0%); margin: 0.25rem 0;">
+                  <div class="hud-gauge-inner" style="width: 54px; height: 54px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center;">
+                    <span id="lbl-kpi-avg-occ" class="kpi-value text-cyan" style="font-size: 1.1rem; font-weight: 700; margin: 0;">21%</span>
+                  </div>
+                </div>
               </div>
-              <div class="kpi-mini-card">
-                <span class="kpi-title">TOTAL STAFF</span>
-                <span id="lbl-kpi-total-staff" class="kpi-value text-purple">86</span>
+              <div class="kpi-mini-card flex-column align-center" style="padding: 0.5rem; text-align: center;">
+                <span class="kpi-title" style="margin-bottom: 0.5rem;">VENUE RISK INDEX</span>
+                <!-- Circular gauge ring -->
+                <div class="hud-gauge-ring" id="gauge-risk-index" style="width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: conic-gradient(var(--success-green) 0%, rgba(255,255,255,0.05) 0%); margin: 0.25rem 0;">
+                  <div class="hud-gauge-inner" style="width: 54px; height: 54px; border-radius: 50%; background: #0f172a; display: flex; align-items: center; justify-content: center;">
+                    <span id="lbl-kpi-risk-index" class="kpi-value text-success" style="font-size: 1.1rem; font-weight: 700; margin: 0;">LOW</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Historical Occupancy Trend (Sparkline Chart) -->
+            <div class="glass-panel" style="padding: 0.75rem;">
+              <div class="kpi-title" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; font-size: 0.7rem;">
+                <span>STADIUM LOAD FLOW HISTORY</span>
+                <span class="text-cyan"><i class="fa-solid fa-chart-line"></i> TELEMETRY SPARKLINE</span>
+              </div>
+              <div style="height: 50px; background: rgba(5,7,15,0.4); border-radius: 4px; border: 1px solid rgba(255,255,255,0.03); overflow: hidden; padding: 2px;">
+                <svg id="sparkline-svg" width="100%" height="100%" viewBox="0 0 200 45" preserveAspectRatio="none">
+                  <path id="sparkline-path" d="" fill="none" stroke="var(--neon-cyan)" stroke-width="2" stroke-linecap="round" />
+                  <path id="sparkline-area" d="" fill="url(#sparkline-grad)" stroke="none" />
+                  <defs>
+                    <linearGradient id="sparkline-grad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stop-color="var(--neon-cyan)" stop-opacity="0.25" />
+                      <stop offset="100%" stop-color="var(--neon-cyan)" stop-opacity="0.0" />
+                    </linearGradient>
+                  </defs>
+                </svg>
               </div>
             </div>
 
@@ -262,6 +294,15 @@
                   <div class="cctv-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0, 240, 255, 0.1); padding-bottom: 0.35rem; margin-bottom: 0.5rem;">
                     <span class="text-cyan" style="font-size: 0.75rem; font-weight: 700; letter-spacing: 1px;"><i class="fa-solid fa-video blink text-danger"></i> CCTV VISION ANALYTICS</span>
                     <span id="cctv-cam-id" style="font-size: 0.7rem; color: var(--text-muted);">CAM-ID: CCTV_08_G3</span>
+                  </div>
+                  <!-- Animated scanner screen -->
+                  <div class="cctv-feed-scanner mb-1 relative" style="height: 100px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(0, 240, 255, 0.2); background: #020617; position: relative;">
+                    <div class="cctv-sweep-laser"></div>
+                    <div class="cctv-tracker tracker-1"></div>
+                    <div class="cctv-tracker tracker-2"></div>
+                    <div class="cctv-tracker tracker-3"></div>
+                    <div class="cctv-crosshair"></div>
+                    <span style="position: absolute; top: 6px; left: 8px; font-size: 0.65rem; color: #10b981; font-weight: 700; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;"><span class="cctv-dot-rec"></span> LIVE CAM FEED</span>
                   </div>
                   <div class="cctv-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; font-size: 0.8rem; font-weight: 600;">
                     <div>QUEUE ESTIMATION: <strong id="cctv-queue-len" class="text-cyan">--</strong></div>

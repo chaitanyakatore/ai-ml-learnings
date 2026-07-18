@@ -11,6 +11,23 @@ let stadiumState = {
 let currentTimeTravelMode = 'now'; // 'now' or 'projected'
 let latestBroadcastPackage = null;
 let currentPushTab = 'en';
+let occupancyHistory = [20, 22, 25, 24, 21, 23, 20, 22, 25, 21]; // Sparkline data history
+
+// Coordinates mapping for SVG visual path routing
+const routeCoordinates = {
+  'gate_1': { x: 400, y: 55 },
+  'gate_2': { x: 710, y: 255 },
+  'gate_3': { x: 400, y: 450 },
+  'gate_4': { x: 90, y: 255 },
+  'concourse_a': { x: 400, y: 152 },
+  'concourse_b': { x: 560, y: 255 },
+  'concourse_c': { x: 400, y: 360 },
+  'concourse_d': { x: 240, y: 255 },
+  '105': { x: 400, y: 220 }, // North Stand
+  '115': { x: 460, y: 250 }, // East Stand
+  '210': { x: 400, y: 280 }, // South Stand
+  '225': { x: 340, y: 250 }  // West Stand
+};
 
 // Map of optimal routing
 const seatingSectionsMapping = {
@@ -100,6 +117,15 @@ function updateKPIs() {
     }
   }
 
+  // Update occupancy history for sparkline
+  if (stadiumState.zones.length > 0) {
+    occupancyHistory.push(avgOccupancy);
+    if (occupancyHistory.length > 10) {
+      occupancyHistory.shift();
+    }
+    drawSparkline(occupancyHistory);
+  }
+
   const avgOccEl = document.getElementById('lbl-kpi-avg-occ');
   if (avgOccEl) {
     avgOccEl.innerText = `${avgOccupancy}%`;
@@ -112,10 +138,69 @@ function updateKPIs() {
     }
   }
 
-  const staffEl = document.getElementById('lbl-kpi-total-staff');
-  if (staffEl) {
-    staffEl.innerText = totalStaff;
+  // Update circular occupancy gauge ring
+  const avgOccGauge = document.getElementById('gauge-avg-occ');
+  if (avgOccGauge) {
+    avgOccGauge.style.background = `conic-gradient(var(--neon-cyan) ${avgOccupancy}%, rgba(255,255,255,0.05) ${avgOccupancy}%)`;
   }
+
+  // Update circular stadium risk index gauge
+  const riskIndexGauge = document.getElementById('gauge-risk-index');
+  const riskIndexLabel = document.getElementById('lbl-kpi-risk-index');
+  if (riskIndexGauge && riskIndexLabel) {
+    let riskPercent = 0;
+    let riskText = 'LOW';
+    let riskColorClass = 'kpi-value text-success';
+    let riskColorHex = 'var(--success-green)';
+
+    const hasCritical = stadiumState.zones.some(z => z.risk_label === 'critical');
+    const hasElevated = stadiumState.zones.some(z => z.risk_label === 'elevated');
+
+    if (hasCritical) {
+      riskPercent = 100;
+      riskText = 'HIGH';
+      riskColorClass = 'kpi-value text-danger';
+      riskColorHex = 'var(--neon-pink)';
+    } else if (hasElevated) {
+      riskPercent = 65;
+      riskText = 'MOD';
+      riskColorClass = 'kpi-value text-warning';
+      riskColorHex = 'var(--neon-yellow)';
+    } else {
+      riskPercent = 25;
+      riskText = 'LOW';
+      riskColorClass = 'kpi-value text-success';
+      riskColorHex = 'var(--success-green)';
+    }
+
+    riskIndexGauge.style.background = `conic-gradient(${riskColorHex} ${riskPercent}%, rgba(255,255,255,0.05) ${riskPercent}%)`;
+    riskIndexLabel.innerText = riskText;
+    riskIndexLabel.className = riskColorClass;
+  }
+}
+
+// Draw dynamic SVG sparkline charts
+function drawSparkline(history) {
+  const path = document.getElementById('sparkline-path');
+  const area = document.getElementById('sparkline-area');
+  if (!path || !area) return;
+
+  const width = 200;
+  const height = 45;
+  const maxVal = 100;
+
+  let points = [];
+  history.forEach((val, index) => {
+    const x = (index / (history.length - 1)) * width;
+    const y = height - (val / maxVal) * (height - 10) - 5;
+    points.push({ x, y });
+  });
+
+  const dPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ');
+  path.setAttribute('d', dPath);
+
+  const dArea = `${dPath} L ${width} ${height} L 0 ${height} Z`;
+  area.setAttribute('d', dArea);
 }
 
 // Populate the action dispatcher dropdown in Ops dashboard
@@ -279,6 +364,12 @@ function updateInspectorView() {
 function switchRole(role) {
   currentRole = role;
   
+  // Hide visual wayfinding lines if not in Fan view
+  const navLine = document.getElementById('svg-navigation-line');
+  if (navLine && role !== 'fan') {
+    navLine.classList.add('hidden');
+  }
+
   // Update Buttons
   document.querySelectorAll('.btn-role').forEach(btn => btn.classList.remove('active'));
   document.getElementById(`btn-view-${role}`).classList.add('active');
@@ -468,6 +559,23 @@ function calculateFanRoute() {
       el.style.strokeWidth = '4';
     }
   });
+
+  // Visual GPS SVG Navigation Line rendering
+  const navLine = document.getElementById('svg-navigation-line');
+  const start = routeCoordinates[gateId];
+  const mid = routeCoordinates[mapping.concourse];
+  const end = routeCoordinates[sectionId];
+
+  if (navLine && start && mid && end) {
+    navLine.setAttribute('d', `M ${start.x},${start.y} L ${mid.x},${mid.y} L ${end.x},${end.y}`);
+    navLine.classList.remove('hidden');
+
+    if (congestedPathZones.length > 0) {
+      navLine.classList.add('congested');
+    } else {
+      navLine.classList.remove('congested');
+    }
+  }
 
   // Render path flow line
   pathContainer.innerHTML = `

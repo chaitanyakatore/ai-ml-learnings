@@ -1017,3 +1017,163 @@ h1, h2, h3, .font-cyber {
     flex-direction: column;
   }
 }
+
+/* ==========================================================================
+   Phase 6: Advanced UI & Visual Upgrades
+   ========================================================================== */
+
+/* CCTV Scanner Feed Simulation */
+.cctv-feed-scanner::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: 
+    linear-gradient(rgba(18, 24, 38, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 4px, 12px 12px, 12px 12px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cctv-sweep-laser {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(to bottom, rgba(0, 240, 255, 0), rgba(0, 240, 255, 0.8), rgba(0, 240, 255, 0));
+  box-shadow: 0 0 8px rgba(0, 240, 255, 0.6);
+  top: 0;
+  left: 0;
+  z-index: 3;
+  animation: cctvLaserSweep 3.5s infinite linear;
+}
+
+.cctv-crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(0, 240, 255, 0.25);
+  border-radius: 50%;
+}
+.cctv-crosshair::before,
+.cctv-crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(0, 240, 255, 0.35);
+}
+.cctv-crosshair::before {
+  top: 50%;
+  left: -8px;
+  width: 32px;
+  height: 1px;
+  transform: translateY(-50%);
+}
+.cctv-crosshair::after {
+  left: 50%;
+  top: -8px;
+  height: 32px;
+  width: 1px;
+  transform: translateX(-50%);
+}
+
+.cctv-tracker {
+  position: absolute;
+  border: 1px solid rgba(0, 240, 255, 0.5);
+  width: 14px;
+  height: 14px;
+  box-shadow: 0 0 4px rgba(0, 240, 255, 0.2);
+  pointer-events: none;
+  animation: cctvTrackingTarget 8s infinite ease-in-out;
+}
+.cctv-tracker::before {
+  content: "TARGET";
+  position: absolute;
+  top: -12px;
+  left: 0;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 700;
+  color: var(--neon-cyan);
+  letter-spacing: 0.5px;
+}
+.cctv-tracker.tracker-1 {
+  top: 20%;
+  left: 15%;
+  animation-delay: 0s;
+}
+.cctv-tracker.tracker-2 {
+  top: 60%;
+  left: 70%;
+  animation-delay: -2.5s;
+  border-color: var(--neon-yellow);
+}
+.cctv-tracker.tracker-2::before {
+  content: "FLOW_V";
+  color: var(--neon-yellow);
+}
+.cctv-tracker.tracker-3 {
+  top: 35%;
+  left: 45%;
+  animation-delay: -5s;
+  width: 18px;
+  height: 18px;
+}
+
+.cctv-dot-rec {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon-pink);
+  display: inline-block;
+  animation: cctvRecBlink 0.8s infinite alternate;
+}
+
+/* Pulsing SVG Wayfinding Path */
+#svg-navigation-line {
+  stroke-dasharray: 10, 8;
+  animation: svgRouteFlow 1.5s infinite linear;
+}
+#svg-navigation-line.congested {
+  stroke: var(--neon-pink) !important;
+}
+
+/* Circular HUD progress dials */
+.hud-gauge-ring {
+  box-shadow: 0 0 10px rgba(0, 240, 255, 0.05);
+  transition: background 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Keyframe Animations */
+@keyframes cctvLaserSweep {
+  0% { top: 0%; }
+  50% { top: 100%; }
+  100% { top: 0%; }
+}
+
+@keyframes cctvTrackingTarget {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(25px, 8px); }
+  50% { transform: translate(12px, 22px); }
+  75% { transform: translate(-8px, -12px); }
+}
+
+@keyframes cctvRecBlink {
+  from { opacity: 0.25; }
+  to { opacity: 1; }
+}
+
+@keyframes svgRouteFlow {
+  from {
+    stroke-dashoffset: 36;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
