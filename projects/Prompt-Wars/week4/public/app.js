@@ -65,6 +65,7 @@ async function fetchStadiumState() {
     updateKPIs();
     updateIncidentDropdown();
     renderAuditTimeline();
+    updateCopilotRecommendations();
     
     if (currentRole === 'ops') {
       updateInspectorView();
@@ -107,7 +108,7 @@ function updateKPIs() {
 
   const alertsBadge = document.getElementById('lbl-kpi-alerts');
   if (alertsBadge) {
-    alertsBadge.innerText = `${activeAlertsCount} Active Incident${activeAlertsCount !== 1 ? 's' : ''}`;
+    alertsBadge.innerText = `${activeAlertsCount} Active Alert${activeAlertsCount !== 1 ? 's' : ''}`;
     if (activeAlertsCount > 0) {
       alertsBadge.classList.remove('bg-green');
       alertsBadge.classList.add('bg-red');
@@ -126,56 +127,50 @@ function updateKPIs() {
     drawSparkline(occupancyHistory);
   }
 
-  const avgOccEl = document.getElementById('lbl-kpi-avg-occ');
-  if (avgOccEl) {
-    avgOccEl.innerText = `${avgOccupancy}%`;
-    if (avgOccupancy > 65) {
-      avgOccEl.className = 'kpi-value text-danger';
-    } else if (avgOccupancy > 40) {
-      avgOccEl.className = 'kpi-value text-warning';
-    } else {
-      avgOccEl.className = 'kpi-value text-cyan';
-    }
-  }
-
-  // Update circular occupancy gauge ring
   const avgOccGauge = document.getElementById('gauge-avg-occ');
+  const avgOccLabel = document.getElementById('lbl-kpi-avg-occ');
   if (avgOccGauge) {
-    avgOccGauge.style.background = `conic-gradient(var(--neon-cyan) ${avgOccupancy}%, rgba(255,255,255,0.05) ${avgOccupancy}%)`;
+    avgOccGauge.innerText = `${avgOccupancy}%`;
+    if (avgOccupancy > 65) {
+      avgOccGauge.style.color = 'var(--md-sys-color-error)';
+      if (avgOccLabel) avgOccLabel.innerText = 'Critical Density';
+    } else if (avgOccupancy > 40) {
+      avgOccGauge.style.color = 'var(--md-sys-color-warning)';
+      if (avgOccLabel) avgOccLabel.innerText = 'Moderate Inflow';
+    } else {
+      avgOccGauge.style.color = 'var(--md-sys-color-primary)';
+      if (avgOccLabel) avgOccLabel.innerText = 'Nominal Capacity';
+    }
   }
 
   // Update circular stadium risk index gauge
   const riskIndexGauge = document.getElementById('gauge-risk-index');
   const riskIndexLabel = document.getElementById('lbl-kpi-risk-index');
   if (riskIndexGauge && riskIndexLabel) {
-    let riskPercent = 0;
     let riskText = 'LOW';
-    let riskColorClass = 'kpi-value text-success';
-    let riskColorHex = 'var(--success-green)';
+    let riskColor = 'var(--md-sys-color-success)';
+    let riskDesc = 'Stable Operations';
 
     const hasCritical = stadiumState.zones.some(z => z.risk_label === 'critical');
     const hasElevated = stadiumState.zones.some(z => z.risk_label === 'elevated');
 
     if (hasCritical) {
-      riskPercent = 100;
       riskText = 'HIGH';
-      riskColorClass = 'kpi-value text-danger';
-      riskColorHex = 'var(--neon-pink)';
+      riskColor = 'var(--md-sys-color-error)';
+      riskDesc = 'Action Required';
     } else if (hasElevated) {
-      riskPercent = 65;
       riskText = 'MOD';
-      riskColorClass = 'kpi-value text-warning';
-      riskColorHex = 'var(--neon-yellow)';
+      riskColor = 'var(--md-sys-color-warning)';
+      riskDesc = 'Monitoring Active';
     } else {
-      riskPercent = 25;
       riskText = 'LOW';
-      riskColorClass = 'kpi-value text-success';
-      riskColorHex = 'var(--success-green)';
+      riskColor = 'var(--md-sys-color-success)';
+      riskDesc = 'Stable Operations';
     }
 
-    riskIndexGauge.style.background = `conic-gradient(${riskColorHex} ${riskPercent}%, rgba(255,255,255,0.05) ${riskPercent}%)`;
-    riskIndexLabel.innerText = riskText;
-    riskIndexLabel.className = riskColorClass;
+    riskIndexGauge.innerText = riskText;
+    riskIndexGauge.style.color = riskColor;
+    riskIndexLabel.innerText = riskDesc;
   }
 }
 
@@ -323,13 +318,21 @@ function updateInspectorView() {
   document.getElementById('inspect-flow').innerText = `${flow} p/min ${currentTimeTravelMode === 'projected' ? '(Projected)' : ''}`;
   
   const trendEl = document.getElementById('inspect-trend');
-  trendEl.innerText = zone.trend.charAt(0).toUpperCase() + zone.trend.slice(1);
-  trendEl.className = zone.trend === 'increasing' ? 'text-danger' : (zone.trend === 'decreasing' ? 'text-cyan' : 'text-warning');
+  if (trendEl) {
+    trendEl.innerText = zone.trend.charAt(0).toUpperCase() + zone.trend.slice(1);
+    trendEl.className = zone.trend === 'increasing' ? 'text-danger' : (zone.trend === 'decreasing' ? 'text-cyan' : 'text-warning');
+  }
 
-  document.getElementById('inspect-staff').innerText = zone.current_staff;
+  const staffEl = document.getElementById('inspect-staff');
+  if (staffEl) {
+    staffEl.innerText = zone.current_staff;
+  }
 
   // CCTV diagnostics math
-  document.getElementById('cctv-cam-id').innerText = `CAM-ID: CCTV_${zone.zone_id.toUpperCase()}`;
+  const camIdEl = document.getElementById('cctv-cam-id');
+  if (camIdEl) {
+    camIdEl.innerText = `CAM-ID: CCTV_${zone.zone_id.toUpperCase()}`;
+  }
   document.getElementById('cctv-queue-len').innerText = `${Math.round(occ * 0.45)} meters`;
   document.getElementById('cctv-object-count').innerText = `${Math.round(flow * 3.8)} active`;
   document.getElementById('cctv-density').innerText = `${(occ / 22).toFixed(1)} / sqm`;
@@ -350,13 +353,15 @@ function updateInspectorView() {
   document.getElementById('inspect-ai-reallocation').innerText = zone.staffing_reallocation || 'None needed.';
   
   const etaEl = document.getElementById('inspect-ai-eta');
-  if (zone.eta_to_critical_minutes > 0) {
-    etaEl.innerHTML = `<span class="text-danger font-medium"><i class="fa-solid fa-triangle-exclamation"></i> ${zone.eta_to_critical_minutes} minutes</span> to gridlock`;
-  } else if (label === 'critical') {
-    etaEl.innerHTML = `<span class="text-danger font-medium"><i class="fa-solid fa-skull-crossbones"></i> Critical Block</span> active`;
-  } else {
-    etaEl.innerText = 'Stable flow / Low density';
-    etaEl.className = 'text-muted';
+  if (etaEl) {
+    if (zone.eta_to_critical_minutes > 0) {
+      etaEl.innerHTML = `<span class="text-danger font-medium"><i class="fa-solid fa-triangle-exclamation"></i> ${zone.eta_to_critical_minutes} minutes</span> to gridlock`;
+    } else if (label === 'critical') {
+      etaEl.innerHTML = `<span class="text-danger font-medium"><i class="fa-solid fa-skull-crossbones"></i> Critical Block</span> active`;
+    } else {
+      etaEl.innerText = 'Stable flow / Low density';
+      etaEl.className = 'text-muted';
+    }
   }
 }
 
@@ -372,11 +377,47 @@ function switchRole(role) {
 
   // Update Buttons
   document.querySelectorAll('.btn-role').forEach(btn => btn.classList.remove('active'));
-  document.getElementById(`btn-view-${role}`).classList.add('active');
+  const activeBtn = document.getElementById(`btn-view-${role}`);
+  if (activeBtn) activeBtn.classList.add('active');
 
   // Update Sections
   document.querySelectorAll('.view-section').forEach(sec => sec.classList.remove('active'));
-  document.getElementById(`view-section-${role}`).classList.add('active');
+  const activeSec = document.getElementById(`view-section-${role}`);
+  if (activeSec) activeSec.classList.add('active');
+
+  // Dynamic welcome message in the Copilot Chat based on active role
+  const chatMessages = document.getElementById('chat-messages-box');
+  const chatInput = document.getElementById('txt-chat-input');
+  
+  if (chatMessages && chatInput) {
+    chatMessages.innerHTML = '';
+    
+    let welcomeHtml = '';
+    if (role === 'fan') {
+      chatInput.placeholder = "Ask about transit, bags, or seating section paths...";
+      welcomeHtml = `
+        <div class="chat-msg bot">
+          <div class="msg-avatar"><i class="fa-solid fa-sparkles"></i></div>
+          <div class="msg-bubble">
+            <p>Welcome to the <strong>FIFA World Cup 2026 Fan Concierge</strong>! ⚽️</p>
+            <p>I can help you navigate the stadium, guide you around crowd congestion, look up your seating gate, or answer questions about bag policies and local transit. How can I assist you today?</p>
+          </div>
+        </div>
+      `;
+    } else {
+      chatInput.placeholder = "Ask Gemini...";
+      welcomeHtml = `
+        <div class="chat-msg bot">
+          <div class="msg-avatar"><i class="fa-solid fa-circle-nodes"></i></div>
+          <div class="msg-bubble">
+            <p>Welcome to the <strong>Gemini AI Operations Copilot</strong>! ⚽️</p>
+            <p>I can help you monitor crowd flows, suggest volunteer reallocations, draft announcements, or answer operations and rules questions. How can I assist you today?</p>
+          </div>
+        </div>
+      `;
+    }
+    chatMessages.innerHTML = welcomeHtml;
+  }
 
   // Load section-specific modules
   if (role === 'ops') {
@@ -668,8 +709,12 @@ function formatMarkdown(text) {
 async function sendChatMessage() {
   const input = document.getElementById('txt-chat-input');
   const query = input.value.trim();
-  const lang = document.getElementById('sel-fan-lang').value;
-  const section = document.getElementById('sel-fan-section').value;
+  
+  const langEl = document.getElementById('sel-fan-lang');
+  const lang = langEl ? langEl.value : 'English';
+  
+  const sectionEl = document.getElementById('sel-fan-section');
+  const section = sectionEl ? sectionEl.value : 'General Admission';
 
   if (!query) return;
 
@@ -845,10 +890,14 @@ function setTimeTravelMode(mode) {
 
   // Toggle active button CSS classes
   document.querySelectorAll('.time-travel-slider-box button').forEach(btn => btn.classList.remove('active'));
-  if (mode === 'now') {
-    document.getElementById('btn-time-now').classList.add('active');
-  } else {
-    document.getElementById('btn-time-projected').classList.add('active');
+  
+  const btnNow = document.getElementById('btn-time-now');
+  const btnProj = document.getElementById('btn-time-projected');
+  
+  if (mode === 'now' && btnNow) {
+    btnNow.classList.add('active');
+  } else if (btnProj) {
+    btnProj.classList.add('active');
   }
 
   // Refresh colors and inspections based on mode selection
@@ -857,4 +906,71 @@ function setTimeTravelMode(mode) {
   if (selectedZoneId) {
     updateInspectorView();
   }
+}
+
+// Render dynamic AI recommendations on the Copilot sidebar
+function updateCopilotRecommendations() {
+  const container = document.getElementById('copilot-recommendations-list');
+  if (!container) return;
+
+  const activeAlerts = stadiumState.zones.filter(z => z.risk_label !== 'normal');
+  container.innerHTML = '';
+
+  if (activeAlerts.length === 0) {
+    container.innerHTML = `
+      <div class="copilot-recom-card">
+        <div class="copilot-recom-header">
+          <span class="badge bg-green">Safe Flow</span>
+          <span class="confidence-indicator"><i class="fa-solid fa-brain"></i> 98% Conf.</span>
+        </div>
+        <p class="copilot-recom-desc">Stadium operations are nominal. All ingress gates and concourses are processing within standard parameters.</p>
+        <div class="copilot-recom-impact">
+          <strong>Predicted Impact:</strong> No bottlenecks forecast. Safe stadium-wide ingress maintained.
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  activeAlerts.forEach(zone => {
+    let badgeColorClass = zone.risk_label === 'critical' ? 'bg-red' : 'bg-yellow';
+    let cardUrgentClass = zone.risk_label === 'critical' ? 'urgent' : '';
+    let confidence = zone.confidence_score || (zone.risk_label === 'critical' ? 95 : 88);
+    let impact = zone.predicted_impact || "Potential gate deceleration or crowd gridlock outside entrance turnstiles.";
+    
+    const card = document.createElement('div');
+    card.className = `copilot-recom-card ${cardUrgentClass}`;
+    card.innerHTML = `
+      <div class="copilot-recom-header">
+        <span class="badge ${badgeColorClass}">${zone.name} (${zone.risk_label.toUpperCase()})</span>
+        <span class="confidence-indicator"><i class="fa-solid fa-brain"></i> ${confidence}% Conf.</span>
+      </div>
+      <p class="copilot-recom-desc"><strong>AI Action:</strong> ${zone.recommended_action}</p>
+      <div class="copilot-recom-impact">
+        <strong>Predicted Impact if ignored:</strong> ${impact}
+      </div>
+      <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+        <button class="btn-success" style="font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 100px; font-weight: 500;" onclick="quickDispatch('${zone.zone_id}')">
+          <i class="fa-solid fa-check"></i> Execute Command
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+// Quick action executor for AI recommendations
+function quickDispatch(zoneId) {
+  const zone = stadiumState.zones.find(z => z.zone_id === zoneId);
+  if (!zone) return;
+
+  const select = document.getElementById('sel-dispatch-zone');
+  const actionText = document.getElementById('txt-dispatch-action');
+  const staffText = document.getElementById('txt-dispatch-reallocation');
+
+  if (select) select.value = zoneId;
+  if (actionText) actionText.value = zone.recommended_action || '';
+  if (staffText) staffText.value = zone.staffing_reallocation || 'None needed.';
+
+  dispatchAction();
 }

@@ -1,0 +1,34 @@
+[
+  {
+    "username": "operator",
+    "passwordHash": "7e5a43d257ad0e013407f01aaf3a4eb8:c407e2216b5260537f321caa32c8acad1f4ca031f1ef73e269be211af62ca8a04a675f0715f2cdaeb88450d57425182bb89eb72113e5d010535888e4f240dd55",
+    "role": "ops",
+    "name": "Tournament Ops Director",
+    "securityQuestion": "What is your favorite stadium?",
+    "securityAnswerHash": "adcaa6c7c50d7d2f61c7bc5c43550f3c:aa552ec443e76f70058ed98925c6f8b2fec9e7c0fd1cbc9235a9136077cea11c268f22ba89a3eeead37db78f4dbc73209253fa460bf16c91b924f7d225720eb0"
+  },
+  {
+    "username": "volunteer",
+    "passwordHash": "2718c326c5248cbdc4677a7f717adc05:98b3811def85b316a00eb79908a2a669f88241847791c14cfd16149cc9248c55e585e4e853134437f3cfd41ae6d5549c9b44db251470a048884d3b02fb4c0f78",
+    "role": "volunteer",
+    "name": "Field Volunteer Sector C",
+    "securityQuestion": "What is your primary language?",
+    "securityAnswerHash": "b91413e59345fe83773d58e02eda17bb:0db0d0d7edae7cabb06269f1f0427bdc49f7d1b0f3a85edfbc1656f17e0a8dc00765e3a81e215442052aaa71638aed739723df7a292fad95a71979caeba6a0bc"
+  },
+  {
+    "username": "diag_test_1784407115256",
+    "passwordHash": "5ed5cd919aa3bb4f1c152b2103219e79:a9aa9540fa1a062b6d81fa69d7ccfe89aaf014f29a147198823c9403dfe3a91b22cff8164e93d090e0fd028ff98bd6b2cdae01f79aaaf6fdb9279a53ffee10dd",
+    "role": "volunteer",
+    "name": "Diagnostics Agent",
+    "securityQuestion": "What is your mascot?",
+    "securityAnswerHash": "c3f51e8f585ed4b4ea0c88eccea0d074:f87c8a8560ca4aedf70f2b67a98cb9da37564bd6b11e17c1d293cbe78a255bac8213dd88e16ac9024a71b95ca4563d17dc6ca655db5b446a2cb6f29877cd76e8"
+  },
+  {
+    "username": "diag_test_1784407509040",
+    "passwordHash": "a16e0a0929c6c32fdaf6b253f61c38c1:8cfa8bf54131b8cadc5b45f3c9b38e439131296d91a33a4525490a441234ca6e0f1e8ee78d7396a169273bc5be7d5e7e39d3f8c5a33e7d59527fad76eb75b044",
+    "role": "volunteer",
+    "name": "Diagnostics Agent",
+    "securityQuestion": "What is your mascot?",
+    "securityAnswerHash": "0da017709454c78186e1abafb04bce57:2ee5e59862d36c3633c1eed3a8e9e2c3905a561e3533ac3b5633716c2f590dfe97925d146e28f43e111fed82b88aeffdd33293fd337531c17909e61f601f054c"
+  }
+]

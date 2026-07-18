@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StadiumPulse AI — Operations Control Center</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <div id="app-container">
+    
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-circle">
+          <i class="fa-solid fa-sparkles logo-icon"></i>
+        </div>
+        <div>
+          <h1>StadiumPulse AI</h1>
+          <p class="subtitle">FIFA World Cup 2026 • Operations Control Center</p>
+        </div>
+      </div>
+      
+      <!-- Portal Launcher Home Navigation & Logout -->
+      <div style="display: flex; gap: 0.75rem;">
+        <a href="/" class="btn-dev-toggle" style="text-decoration: none;">
+          <i class="fa-solid fa-home"></i> Home
+        </a>
+        <button class="btn-dev-toggle" style="background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); border-color: rgba(197,34,31,0.2); cursor: pointer;" onclick="handleLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <div class="app-main">
+      
+      <!-- LEFT WORKSPACE COLUMN -->
+      <div class="workspace-viewport">
+        <div class="ops-grid">
+          
+          <!-- Venue Map Card -->
+          <div class="grid-card-span-2 glass-panel" style="padding: 1.25rem;">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-map-location-dot text-cyan"></i> Live Venue Density Map</h2>
+              <span class="badge bg-purple" id="lbl-kpi-alerts">0 Active Alerts</span>
+            </div>
+            <div class="card-body" style="background: #ffffff; border-radius: var(--md-sys-shape-corner-medium); border: 1px solid var(--md-sys-color-border); overflow: hidden;">
+              <svg id="stadium-map" viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="400" cy="250" r="230" class="map-bg" />
+                <circle cx="400" cy="250" r="180" class="seating-ring" />
+                <circle cx="400" cy="250" r="130" class="seating-ring" />
+                
+                <rect x="330" y="190" width="140" height="120" rx="10" fill="#e8eaed" stroke="#bdc1c6" stroke-width="2" />
+                
+                <!-- Zones -->
+                <polygon points="360,20 440,20 420,60 380,60" id="gate_1" class="gate-box risk-normal" onclick="inspectZone('gate_1')" />
+                <polygon points="780,210 780,290 740,270 740,230" id="gate_2" class="gate-box risk-normal" onclick="inspectZone('gate_2')" />
+                <polygon points="360,480 440,480 420,440 380,440" id="gate_3" class="gate-box risk-normal" onclick="inspectZone('gate_3')" />
+                <polygon points="20,210 20,290 60,270 60,230" id="gate_4" class="gate-box risk-normal" onclick="inspectZone('gate_4')" />
+                
+                <path d="M 230,130 A 210,210 0 0,1 570,130 L 520,165 A 150,150 0 0,0 280,165 Z" id="concourse_a" class="gate-box risk-normal" onclick="inspectZone('concourse_a')" />
+                <path d="M 570,130 A 210,210 0 0,1 570,370 L 520,335 A 150,150 0 0,0 520,165 Z" id="concourse_b" class="gate-box risk-normal" onclick="inspectZone('concourse_b')" />
+                <path d="M 570,370 A 210,210 0 0,1 230,370 L 280,335 A 150,150 0 0,0 520,335 Z" id="concourse_c" class="gate-box risk-normal" onclick="inspectZone('concourse_c')" />
+                <path d="M 230,370 A 210,210 0 0,1 230,130 L 280,165 A 150,150 0 0,0 280,335 Z" id="concourse_d" class="gate-box risk-normal" onclick="inspectZone('concourse_d')" />
+                
+                <line x1="400" y1="20" x2="400" y2="0" class="transit-line" />
+                <rect x="375" y="-30" width="50" height="25" rx="5" id="transit_hub_x" class="gate-box risk-normal" onclick="inspectZone('transit_hub_x')" />
+                
+                <line x1="400" y1="480" x2="400" y2="500" class="transit-line" />
+                <rect x="375" y="505" width="50" height="25" rx="5" id="transit_hub_y" class="gate-box risk-normal" onclick="inspectZone('transit_hub_y')" />
+                
+                <path id="svg-navigation-line" class="hidden" d="" fill="none" />
+              </svg>
+              
+              <div class="map-legend">
+                <div class="legend-item"><span class="legend-dot green"></span> Safe Flow</div>
+                <div class="legend-item"><span class="legend-dot yellow"></span> Attention</div>
+                <div class="legend-item"><span class="legend-dot red"></span> Critical</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Telemetry Dials & Sparkline -->
+          <div class="grid-card-span-1" style="display: flex; flex-direction: column; gap: 1.5rem;">
+            <div class="glass-panel kpi-card-container">
+              <div class="kpi-mini-card">
+                <span class="kpi-title">Avg Occupancy</span>
+                <div id="gauge-avg-occ" style="font-size: 1.5rem; font-weight: 700; color: var(--md-sys-color-primary); margin: 0.5rem 0;">21%</div>
+                <span id="lbl-kpi-avg-occ" style="font-size: 0.75rem; color: var(--md-sys-color-text-secondary);">Nominal Capacity</span>
+              </div>
+              <div class="kpi-mini-card">
+                <span class="kpi-title">Risk Index</span>
+                <div id="gauge-risk-index" style="font-size: 1.5rem; font-weight: 700; color: var(--md-sys-color-success); margin: 0.5rem 0;">LOW</div>
+                <span id="lbl-kpi-risk-index" style="font-size: 0.75rem; color: var(--md-sys-color-text-secondary);">Stable Operations</span>
+              </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 1rem;">
+              <span class="kpi-title" style="display: flex; justify-content: space-between;">
+                <span>Stadium Inflow Trends</span>
+                <span class="text-cyan"><i class="fa-solid fa-chart-line"></i> Historical telemetry</span>
+              </span>
+              <div style="height: 45px; margin-top: 0.5rem;">
+                <svg id="sparkline-svg" width="100%" height="100%" viewBox="0 0 200 45" preserveAspectRatio="none">
+                  <path id="sparkline-path" d="" fill="none" stroke="var(--md-sys-color-primary)" stroke-width="2" />
+                  <path id="sparkline-area" d="" fill="rgba(26,115,232,0.1)" stroke="none" />
+                </svg>
+              </div>
+            </div>
+
+            <!-- Inspector Panel -->
+            <div class="glass-panel" id="zone-inspector" style="flex-grow: 1; display: flex; flex-direction: column;">
+              <div class="card-header">
+                <h2><i class="fa-solid fa-circle-info text-cyan"></i> Zone Inspector</h2>
+              </div>
+              <div id="inspector-placeholder" class="center-content flex-column text-muted" style="margin: auto; text-align: center;">
+                <i class="fa-solid fa-arrow-pointer icon-large mb-1" style="font-size: 1.5rem; margin-bottom: 0.5rem; color: var(--md-sys-color-neutral);"></i>
+                <p style="font-size: 0.85rem; color: var(--md-sys-color-text-secondary);">Select a zone on the map to inspect telemetry data.</p>
+              </div>
+              
+              <div id="inspector-content" class="hidden" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <div class="inspector-section-header">
+                  <h3 id="inspect-zone-name">--</h3>
+                  <span id="inspect-zone-badge" class="badge bg-green">Safe</span>
+                </div>
+                
+                <div class="telemetry-grid">
+                  <div class="telemetry-box">
+                    <span class="lbl">Occupancy</span>
+                    <strong id="inspect-occupancy">--</strong>
+                  </div>
+                  <div class="telemetry-box">
+                    <span class="lbl">Throughput</span>
+                    <strong id="inspect-flow">--</strong>
+                  </div>
+                </div>
+
+                <!-- CCTV Tracker -->
+                <div class="cctv-vision-container">
+                  <div class="cctv-feed-scanner">
+                    <div class="cctv-sweep-laser"></div>
+                    <div class="cctv-tracker tracker-1"></div>
+                    <div class="cctv-tracker tracker-2"></div>
+                    <div class="cctv-crosshair"></div>
+                    <span style="position: absolute; top: 6px; left: 8px; font-size: 0.65rem; color: #34a853; font-weight: 700; background: rgba(0,0,0,0.6); padding: 2px 5px; border-radius: 3px; display: flex; align-items: center; gap: 4px;">
+                      <span class="cctv-dot-rec"></span> LIVE TRACKING
+                    </span>
+                  </div>
+                  <div class="cctv-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; font-size: 0.7rem; font-weight: 600;">
+                    <div>EST. QUEUE: <span id="cctv-queue-len" class="text-cyan">--</span></div>
+                    <div>CROWD OBJECTS: <span id="cctv-object-count" class="text-cyan">--</span></div>
+                    <div>DENSITY INDEX: <span id="cctv-density" class="text-cyan">--</span></div>
+                    <div>STATUS: <span class="text-warning">VECTOR_OK</span></div>
+                  </div>
+                </div>
+
+                <!-- AI Inspector Info -->
+                <div class="ai-assessment-box">
+                  <div class="ai-box-title">
+                    <i class="fa-solid fa-brain"></i> GEMINI CROWD INSIGHT
+                  </div>
+                  <div class="ai-field">
+                    <span class="ai-field-title">Flow Diagnostics</span>
+                    <p id="inspect-ai-explanation">Normal operations flow in this zone.</p>
+                  </div>
+                  <div class="ai-field">
+                    <span class="ai-field-title">Actionable Recommendation</span>
+                    <p id="inspect-ai-action" class="text-cyan">Maintain current deployment plan.</p>
+                  </div>
+                  <div class="ai-field">
+                    <span class="ai-field-title">Volunteers Dispatch reallocation</span>
+                    <p id="inspect-ai-reallocation" class="text-purple">Staffing balanced.</p>
+                  </div>
+                  <div class="ai-field">
+                    <span class="ai-field-title">Predicted Capacity Cap Spillover</span>
+                    <p id="inspect-ai-eta" class="text-danger">--</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabbed Briefing Summary & Coordinated Playbook (Bottom Left) -->
+          <div class="grid-card-span-2 glass-panel" style="display: flex; flex-direction: column;">
+            <div class="card-header" style="border-bottom: 1px solid var(--md-sys-color-border); padding-bottom: 0.5rem; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+              <div class="briefing-tabs" style="display: flex; gap: 0.5rem;">
+                <button id="btn-brief-summary" class="btn-role active" onclick="switchBriefTab('summary')">
+                  <i class="fa-solid fa-chart-line"></i> Gemini Operations Briefing
+                </button>
+                <button id="btn-brief-playbook" class="btn-role" onclick="switchBriefTab('playbook')">
+                  <i class="fa-solid fa-shield-halved"></i> Coordinated Playbook
+                </button>
+              </div>
+              <button id="btn-refresh-summary" class="btn-primary" onclick="refreshBriefingData()">
+                <i class="fa-solid fa-rotate"></i> Refresh AI Analysis
+              </button>
+            </div>
+            
+            <div class="card-body" style="flex-grow: 1; display: flex; flex-direction: column; min-height: 250px;">
+              
+              <!-- Summary Tab View -->
+              <div id="brief-tab-summary-view" class="brief-tab-content">
+                <div id="ops-summary-loading" class="center-content hidden py-2">
+                  <i class="fa-solid fa-spinner fa-spin text-purple icon-large mr-1"></i>
+                  <span>Syncing Gemini crowd operations databases...</span>
+                </div>
+                <div id="ops-summary-content" class="ops-briefing-text font-inter">
+                  Loading Gemini summary briefing report...
+                </div>
+              </div>
+
+              <!-- Playbook Tab View -->
+              <div id="brief-tab-playbook-view" class="brief-tab-content hidden" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                <div id="playbook-loading" class="center-content hidden py-2">
+                  <i class="fa-solid fa-spinner fa-spin text-purple icon-large mr-1"></i>
+                  <span>Compiling coordinated emergency playbooks via Gemini...</span>
+                </div>
+                
+                <div id="playbook-placeholder" class="text-muted text-center py-2" style="font-size: 0.85rem; margin: auto;">
+                  <i class="fa-solid fa-circle-info" style="font-size: 1.5rem; margin-bottom: 0.5rem; display: block; color: var(--md-sys-color-primary);"></i>
+                  Select an active zone on the map to compile emergency playbooks.
+                </div>
+                
+                <div id="playbook-content" class="hidden" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; background: var(--md-sys-color-surface-variant); padding: 0.5rem 0.75rem; border-radius: 6px;">
+                    <strong id="lbl-playbook-title" style="font-size: 0.85rem;">Mitigation SOP</strong>
+                    <span class="badge bg-red" id="lbl-playbook-severity">CRITICAL</span>
+                  </div>
+                  
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.8rem;">
+                    <div class="telemetry-box" style="background: rgba(26,115,232,0.03); border-color: rgba(26,115,232,0.2);">
+                      <strong class="text-cyan"><i class="fa-solid fa-users-gear"></i> FIFA Stewards Directives</strong>
+                      <ul id="playbook-stewards-list" style="margin-left: 1rem; margin-top: 0.25rem; list-style-type: square; display: flex; flex-direction: column; gap: 0.25rem; color: var(--md-sys-color-text-secondary);"></ul>
+                    </div>
+                    <div class="telemetry-box" style="background: rgba(52,168,83,0.03); border-color: rgba(52,168,83,0.2);">
+                      <strong class="text-green"><i class="fa-solid fa-building-shield"></i> Security Command</strong>
+                      <ul id="playbook-security-list" style="margin-left: 1rem; margin-top: 0.25rem; list-style-type: square; display: flex; flex-direction: column; gap: 0.25rem; color: var(--md-sys-color-text-secondary);"></ul>
+                    </div>
+                    <div class="telemetry-box" style="background: rgba(219,68,85,0.03); border-color: rgba(219,68,85,0.2);">
+                      <strong class="text-danger"><i class="fa-solid fa-truck-medical"></i> Medical Dispatch</strong>
+                      <ul id="playbook-medical-list" style="margin-left: 1rem; margin-top: 0.25rem; list-style-type: square; display: flex; flex-direction: column; gap: 0.25rem; color: var(--md-sys-color-text-secondary);"></ul>
+                    </div>
+                    <div class="telemetry-box" style="background: rgba(244,180,0,0.03); border-color: rgba(244,180,0,0.2);">
+                      <strong class="text-warning"><i class="fa-solid fa-bus"></i> Transit Authority</strong>
+                      <ul id="playbook-transit-list" style="margin-left: 1rem; margin-top: 0.25rem; list-style-type: square; display: flex; flex-direction: column; gap: 0.25rem; color: var(--md-sys-color-text-secondary);"></ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+          <!-- Actions Dispatch Form (Bottom Right) -->
+          <div class="grid-card-span-1 glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-paper-plane text-cyan"></i> Action Dispatch</h2>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <p style="font-size: 0.75rem; color: var(--md-sys-color-text-secondary);">Submit mitigating actions and staff reallocation commands directly to the field:</p>
+              
+              <div class="dispatch-form" style="display: flex; flex-direction: column; gap: 0.5rem;">
+                <div>
+                  <span class="small-title">Target Zone</span>
+                  <select id="sel-dispatch-zone" class="form-input">
+                    <option value="">Select an active zone...</option>
+                  </select>
+                </div>
+                <div>
+                  <span class="small-title">Mitigating Action Command</span>
+                  <textarea id="txt-dispatch-action" rows="2" class="form-input" placeholder="Enter instructions to transmit..."></textarea>
+                </div>
+                <div>
+                  <span class="small-title">Volunteers Reallocation Command</span>
+                  <input type="text" id="txt-dispatch-reallocation" class="form-input" placeholder="e.g. Move 3 volunteers from Gate 1 to Gate 3"/>
+                </div>
+              </div>
+
+              <button id="btn-dispatch-action" class="btn-success width-full" style="padding: 0.75rem;" onclick="dispatchAction()">
+                <i class="fa-solid fa-bullhorn"></i> Transmit Order to Field
+              </button>
+
+              <button id="btn-generate-broadcast" class="btn-primary width-full" style="padding: 0.75rem;" onclick="generateBroadcastPackage()" disabled>
+                <i class="fa-solid fa-tower-broadcast"></i> Compile AI Broadcast Script
+              </button>
+
+              <!-- Broadcast Package Script Card -->
+              <div id="broadcast-package-box" class="glass-panel-small hidden" style="margin-top: 0.5rem; background: var(--md-sys-color-surface-variant);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--md-sys-color-border); padding-bottom: 0.25rem; margin-bottom: 0.5rem;">
+                  <strong class="text-cyan" style="font-size: 0.75rem;">AI Broadcast Scripts</strong>
+                  <button onclick="document.getElementById('broadcast-package-box').classList.add('hidden')" style="background: none; border: none; font-size: 0.65rem; color: var(--md-sys-color-text-secondary); cursor: pointer;">CLOSE</button>
+                </div>
+                <div style="font-size: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                  <div>
+                    <span class="small-title">Announcer PA Script</span>
+                    <blockquote id="broadcast-pa-text" style="font-style: italic; background: #ffffff; padding: 0.4rem; border-left: 2px solid var(--md-sys-color-primary); margin-top: 0.15rem; border-radius: 4px;">PA text here...</blockquote>
+                  </div>
+                  <div>
+                    <span class="small-title">App Push Alerts (Multilingual)</span>
+                    <div class="translation-tabs" style="display: flex; gap: 0.2rem; margin-top: 0.2rem;">
+                      <button class="btn-role active" id="tab-push-en" onclick="setPushTab('en')" style="font-size: 0.6rem; padding: 0.15rem 0.35rem;">EN</button>
+                      <button class="btn-role" id="tab-push-es" onclick="setPushTab('es')" style="font-size: 0.6rem; padding: 0.15rem 0.35rem;">ES</button>
+                      <button class="btn-role" id="tab-push-fr" onclick="setPushTab('fr')" style="font-size: 0.6rem; padding: 0.15rem 0.35rem;">FR</button>
+                      <button class="btn-role" id="tab-push-pt" onclick="setPushTab('pt')" style="font-size: 0.6rem; padding: 0.15rem 0.35rem;">PT</button>
+                    </div>
+                    <p id="broadcast-push-text" style="background: #ffffff; padding: 0.4rem; border-radius: 4px; margin-top: 0.2rem;">Push notification translations...</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline -->
+          <div class="grid-card-span-3 glass-panel" style="margin-top: 0.5rem;">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-clock-rotate-left text-cyan"></i> Chronological Operations Timeline Feed</h2>
+            </div>
+            <div class="card-body" style="max-height: 180px; overflow-y: auto;">
+              <div id="ops-audit-timeline">
+                <div class="text-muted text-center py-2" style="font-size: 0.85rem;">
+                  No logs recorded.
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: PERSISTENT AI COPILOT SIDEBAR -->
+      <aside class="copilot-sidebar">
+        <div class="copilot-header">
+          <h3><i class="fa-solid fa-sparkles"></i> Gemini AI Copilot</h3>
+          <span class="badge bg-purple">Active Reasoning</span>
+        </div>
+        
+        <div class="copilot-body">
+          <div>
+            <span class="small-title">PREDICTIVE ACTIONS & DISPATCHES</span>
+            <div id="copilot-recommendations-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+              <!-- Dynamic recommendations loaded here -->
+            </div>
+          </div>
+
+          <div class="flex-grow" style="display: flex; flex-direction: column; min-height: 0;">
+            <span class="small-title">CONVERSATIONAL ASSISTANT</span>
+            <div class="chat-window-container flex-grow mt-05" style="border-radius: var(--md-sys-shape-corner-medium); border: 1px solid var(--md-sys-color-border); display: flex; flex-direction: column; overflow: hidden;">
+              <div id="chat-messages-box" class="chat-messages-box"></div>
+              <div class="chat-input-bar">
+                <input type="text" id="txt-chat-input" placeholder="Ask Gemini..." onkeypress="handleChatKeyPress(event)"/>
+                <button id="btn-chat-send" class="btn-primary" onclick="sendChatMessage()" style="padding: 0.35rem 0.65rem;">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <script src="operations.js"></script>
+</body>
+</html>

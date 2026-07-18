@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StadiumPulse AI — Secure Access Control</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: var(--md-sys-color-background);
+      padding: 1.5rem;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 440px;
+    }
+    .login-card {
+      background: var(--md-sys-color-surface);
+      border: 1px solid var(--md-sys-color-border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      box-shadow: var(--md-sys-elevation-2);
+    }
+    .login-logo {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      text-align: center;
+    }
+    .login-logo h1 {
+      font-size: 1.8rem;
+      font-weight: 600;
+    }
+    .login-logo p {
+      font-size: 0.85rem;
+      color: var(--md-sys-color-text-secondary);
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+    .form-group label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--md-sys-color-text-secondary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .error-box {
+      background: var(--md-sys-color-error-container);
+      color: var(--md-sys-color-on-error-container);
+      border: 1px solid rgba(197, 34, 31, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .success-box {
+      background: var(--md-sys-color-success-container);
+      color: var(--md-sys-color-on-success-container);
+      border: 1px solid rgba(19, 115, 51, 0.2);
+      border-radius: 8px;
+      padding: 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .form-toggle-link {
+      font-size: 0.8rem;
+      color: var(--md-sys-color-primary);
+      text-decoration: none;
+      font-weight: 500;
+      cursor: pointer;
+    }
+    .form-toggle-link:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-container">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="logo-circle" style="width: 52px; height: 52px; font-size: 1.25rem;">
+          <i class="fa-solid fa-shield-halved logo-icon" id="logo-icon-shield"></i>
+        </div>
+        <h1 id="portal-title">StadiumPulse AI</h1>
+        <p id="portal-subtitle">FIFA World Cup 2026 Operations Portal Gateway</p>
+      </div>
+
+      <!-- Notification Alerts -->
+      <div id="login-error-msg" class="error-box hidden">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        <span id="error-text">Authentication credentials invalid.</span>
+      </div>
+
+      <div id="login-success-msg" class="success-box hidden">
+        <i class="fa-solid fa-circle-check"></i>
+        <span id="success-text">Operation completed successfully.</span>
+      </div>
+
+      <!-- 1. LOGIN FORM -->
+      <form id="form-login" onsubmit="handleLoginSubmit(event)" style="display: flex; flex-direction: column; gap: 1.15rem;">
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input type="text" id="login-username" class="form-input" required placeholder="e.g., operator" autocomplete="username"/>
+        </div>
+        
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" class="form-input" required placeholder="••••••••" autocomplete="current-password"/>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem;">
+          <span class="form-toggle-link" onclick="switchMode('forgot')">Forgot Password?</span>
+        </div>
+
+        <button type="submit" class="btn-primary" style="padding: 0.75rem; font-weight: 600; justify-content: center; margin-top: 0.25rem;">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Authenticate & Enter
+        </button>
+
+        <div style="text-align: center; font-size: 0.8rem; margin-top: 0.5rem; color: var(--md-sys-color-text-secondary);">
+          Need an account? <span class="form-toggle-link" onclick="switchMode('register')">Register Now</span>
+        </div>
+      </form>
+
+      <!-- 2. REGISTRATION FORM -->
+      <form id="form-register" class="hidden" onsubmit="handleRegisterSubmit(event)" style="display: flex; flex-direction: column; gap: 1.15rem;">
+        <div class="form-group">
+          <label for="reg-username">Username</label>
+          <input type="text" id="reg-username" class="form-input" required placeholder="e.g., alex_steward" autocomplete="username"/>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-name">Full Name</label>
+          <input type="text" id="reg-name" class="form-input" required placeholder="e.g., Alex Johnson"/>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-role">Operational Role</label>
+          <select id="reg-role" class="form-input" required>
+            <option value="volunteer">Field Volunteer (Staff companion access)</option>
+            <option value="ops">Operations Lead (Command center access)</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" class="form-input" required placeholder="Min 6 characters"/>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-question">Security Reset Question</label>
+          <select id="reg-question" class="form-input" required>
+            <option value="What is your favorite stadium?">What is your favorite stadium?</option>
+            <option value="What is your primary language?">What is your primary language?</option>
+            <option value="What was the name of your first school?">What was the name of your first school?</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="reg-answer">Security Answer</label>
+          <input type="text" id="reg-answer" class="form-input" required placeholder="For password recovery"/>
+        </div>
+
+        <button type="submit" class="btn-success" style="padding: 0.75rem; font-weight: 600; justify-content: center; margin-top: 0.25rem;">
+          <i class="fa-solid fa-user-plus"></i> Create Account
+        </button>
+
+        <div style="text-align: center; font-size: 0.8rem; margin-top: 0.5rem; color: var(--md-sys-color-text-secondary);">
+          Already have an account? <span class="form-toggle-link" onclick="switchMode('login')">Sign In</span>
+        </div>
+      </form>
+
+      <!-- 3. FORGOT PASSWORD RESET FLOW -->
+      <div id="form-forgot" class="hidden" style="display: flex; flex-direction: column; gap: 1.15rem;">
+        
+        <!-- Step A: Enter Username -->
+        <div id="forgot-step-username" style="display: flex; flex-direction: column; gap: 1.15rem;">
+          <div class="form-group">
+            <label for="forgot-username">Enter Username</label>
+            <input type="text" id="forgot-username" class="form-input" placeholder="e.g., operator"/>
+          </div>
+          <button class="btn-primary" onclick="handleFetchSecurityQuestion()" style="padding: 0.75rem; font-weight: 600; justify-content: center;">
+            <i class="fa-solid fa-magnifying-glass"></i> Retrieve Reset Question
+          </button>
+        </div>
+
+        <!-- Step B: Reset Answer & Password -->
+        <div id="forgot-step-reset" class="hidden" style="display: flex; flex-direction: column; gap: 1.15rem;">
+          <div class="telemetry-box" style="background: var(--md-sys-color-primary-container); border-color: rgba(26,115,232,0.2);">
+            <strong style="font-size: 0.72rem; text-transform: uppercase; color: var(--md-sys-color-on-primary-container);">Reset Question</strong>
+            <p id="lbl-forgot-question" style="font-size: 0.85rem; margin-top: 0.15rem; font-weight: 600;">--</p>
+          </div>
+
+          <div class="form-group">
+            <label for="forgot-answer">Your Answer</label>
+            <input type="text" id="forgot-answer" class="form-input" required placeholder="Type answer here..."/>
+          </div>
+
+          <div class="form-group">
+            <label for="forgot-new-password">Enter New Password</label>
+            <input type="password" id="forgot-new-password" class="form-input" required placeholder="Min 6 characters"/>
+          </div>
+
+          <button class="btn-success" onclick="handleExecutePasswordReset()" style="padding: 0.75rem; font-weight: 600; justify-content: center;">
+            <i class="fa-solid fa-key"></i> Reset Password
+          </button>
+        </div>
+
+        <div style="text-align: center; font-size: 0.8rem; margin-top: 0.5rem; color: var(--md-sys-color-text-secondary);">
+          Go back to <span class="form-toggle-link" onclick="switchMode('login')">Sign In</span>
+        </div>
+      </div>
+      
+      <div style="text-align: center; border-top: 1px solid var(--md-sys-color-border); padding-top: 1rem; font-size: 0.8rem; color: var(--md-sys-color-text-secondary);">
+        <a href="/" style="text-decoration: none; color: var(--md-sys-color-primary); font-weight: 500;">
+          <i class="fa-solid fa-arrow-left"></i> Return to Spectator Concierge
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeMode = 'login'; // 'login', 'register', 'forgot'
+
+    function switchMode(mode) {
+      activeMode = mode;
+      
+      // Hide all forms
+      document.getElementById('form-login').classList.add('hidden');
+      document.getElementById('form-register').classList.add('hidden');
+      document.getElementById('form-forgot').classList.add('hidden');
+      
+      // Clear alerts
+      document.getElementById('login-error-msg').classList.add('hidden');
+      document.getElementById('login-success-msg').classList.add('hidden');
+
+      const titleEl = document.getElementById('portal-title');
+      const subtitleEl = document.getElementById('portal-subtitle');
+      const shieldIcon = document.getElementById('logo-icon-shield');
+
+      if (mode === 'login') {
+        document.getElementById('form-login').classList.remove('hidden');
+        titleEl.innerText = "StadiumPulse AI";
+        subtitleEl.innerText = "FIFA World Cup 2026 Operations Portal Gateway";
+        shieldIcon.className = "fa-solid fa-shield-halved logo-icon";
+      } else if (mode === 'register') {
+        document.getElementById('form-register').classList.remove('hidden');
+        titleEl.innerText = "Create Account";
+        subtitleEl.innerText = "Register new staff or command clearance credentials";
+        shieldIcon.className = "fa-solid fa-user-plus logo-icon";
+      } else if (mode === 'forgot') {
+        document.getElementById('form-forgot').classList.remove('hidden');
+        document.getElementById('forgot-step-username').classList.remove('hidden');
+        document.getElementById('forgot-step-reset').classList.add('hidden');
+        titleEl.innerText = "Reset Password";
+        subtitleEl.innerText = "Answer registered security question to recover access";
+        shieldIcon.className = "fa-solid fa-key logo-icon";
+      }
+    }
+
+    async function handleLoginSubmit(event) {
+      event.preventDefault();
+      
+      const userEl = document.getElementById('login-username');
+      const passEl = document.getElementById('login-password');
+      const errBox = document.getElementById('login-error-msg');
+      const errText = document.getElementById('error-text');
+      
+      const username = userEl.value.trim();
+      const password = passEl.value;
+
+      errBox.classList.add('hidden');
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          if (data.role === 'ops') {
+            window.location.href = '/operations';
+          } else if (data.role === 'volunteer') {
+            window.location.href = '/volunteer';
+          } else {
+            window.location.href = '/';
+          }
+        } else {
+          errBox.classList.remove('hidden');
+          errText.innerText = data.error || 'Authentication failed.';
+        }
+      } catch (error) {
+        console.error('Login request failed:', error);
+        errBox.classList.remove('hidden');
+        errText.innerText = 'Network error. Cannot contact auth portal.';
+      }
+    }
+
+    async function handleRegisterSubmit(event) {
+      event.preventDefault();
+
+      const userEl = document.getElementById('reg-username');
+      const nameEl = document.getElementById('reg-name');
+      const roleEl = document.getElementById('reg-role');
+      const passEl = document.getElementById('reg-password');
+      const questEl = document.getElementById('reg-question');
+      const ansEl = document.getElementById('reg-answer');
+
+      const errBox = document.getElementById('login-error-msg');
+      const errText = document.getElementById('error-text');
+      const succBox = document.getElementById('login-success-msg');
+      const succText = document.getElementById('success-text');
+
+      errBox.classList.add('hidden');
+      succBox.classList.add('hidden');
+
+      if (passEl.value.length < 6) {
+        errBox.classList.remove('hidden');
+        errText.innerText = "Password must be at least 6 characters long.";
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: userEl.value,
+            password: passEl.value,
+            role: roleEl.value,
+            name: nameEl.value,
+            securityQuestion: questEl.value,
+            securityAnswer: ansEl.value
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          succBox.classList.remove('hidden');
+          succText.innerText = data.message || "Registration successful! You may now sign in.";
+          
+          // Clear inputs
+          userEl.value = '';
+          nameEl.value = '';
+          passEl.value = '';
+          ansEl.value = '';
+          
+          setTimeout(() => switchMode('login'), 2500);
+        } else {
+          errBox.classList.remove('hidden');
+          errText.innerText = data.error || "Registration failed.";
+        }
+      } catch (error) {
+        console.error('Registration failed:', error);
+        errBox.classList.remove('hidden');
+        errText.innerText = "Failed to communicate with authorization server.";
+      }
+    }
+
+    async function handleFetchSecurityQuestion() {
+      const userEl = document.getElementById('forgot-username');
+      const username = userEl.value.trim();
+
+      const errBox = document.getElementById('login-error-msg');
+      const errText = document.getElementById('error-text');
+
+      errBox.classList.add('hidden');
+
+      if (!username) {
+        errBox.classList.remove('hidden');
+        errText.innerText = "Please enter your username.";
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/forgot-question', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          document.getElementById('lbl-forgot-question').innerText = data.question;
+          document.getElementById('forgot-step-username').classList.add('hidden');
+          document.getElementById('forgot-step-reset').classList.remove('hidden');
+        } else {
+          errBox.classList.remove('hidden');
+          errText.innerText = data.error || "Username not found.";
+        }
+      } catch (error) {
+        console.error('Fetch security question failed:', error);
+        errBox.classList.remove('hidden');
+        errText.innerText = "Network error. Failed to retrieve question.";
+      }
+    }
+
+    async function handleExecutePasswordReset() {
+      const userEl = document.getElementById('forgot-username');
+      const ansEl = document.getElementById('forgot-answer');
+      const passEl = document.getElementById('forgot-new-password');
+
+      const errBox = document.getElementById('login-error-msg');
+      const errText = document.getElementById('error-text');
+      const succBox = document.getElementById('login-success-msg');
+      const succText = document.getElementById('success-text');
+
+      errBox.classList.add('hidden');
+      succBox.classList.add('hidden');
+
+      if (!ansEl.value.trim() || !passEl.value) {
+        errBox.classList.remove('hidden');
+        errText.innerText = "All fields are required.";
+        return;
+      }
+
+      if (passEl.value.length < 6) {
+        errBox.classList.remove('hidden');
+        errText.innerText = "Password must be at least 6 characters long.";
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: userEl.value,
+            answer: ansEl.value,
+            new_password: passEl.value
+          })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          succBox.classList.remove('hidden');
+          succText.innerText = data.message || "Password reset successful! Redirecting to login...";
+          
+          ansEl.value = '';
+          passEl.value = '';
+
+          setTimeout(() => switchMode('login'), 2500);
+        } else {
+          errBox.classList.remove('hidden');
+          errText.innerText = data.error || "Password reset failed.";
+        }
+      } catch (error) {
+        console.error('Password reset request failed:', error);
+        errBox.classList.remove('hidden');
+        errText.innerText = "Failed to communicate with authorization server.";
+      }
+    }
+  </script>
+</body>
+</html>

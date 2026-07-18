@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StadiumPulse AI — Field Volunteer Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="index.css">
+</head>
+<body>
+
+  <div id="app-container">
+    
+    <header class="app-header">
+      <div class="header-brand">
+        <div class="logo-circle">
+          <i class="fa-solid fa-sparkles logo-icon"></i>
+        </div>
+        <div>
+          <h1>StadiumPulse AI</h1>
+          <p class="subtitle">FIFA World Cup 2026 • Field Staff Portal</p>
+        </div>
+      </div>
+      
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <a href="/" class="btn-dev-toggle" style="text-decoration: none;">
+          <i class="fa-solid fa-home"></i> Home
+        </a>
+        <button class="btn-dev-toggle" style="background-color: var(--md-sys-color-error-container); color: var(--md-sys-color-on-error-container); border-color: rgba(197,34,31,0.2); cursor: pointer;" onclick="handleLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Logout
+        </button>
+        <span class="badge bg-green" style="font-size: 0.8rem; padding: 0.5rem 1rem;"><i class="fa-solid fa-signal"></i> Network: ONLINE</span>
+      </div>
+    </header>
+
+    <div class="app-main">
+      
+      <!-- LEFT WORKSPACE COLUMN -->
+      <div class="workspace-viewport">
+        <div class="volunteer-view-container">
+          
+          <div class="view-title-bar">
+            <h2><i class="fa-solid fa-handshake-angle text-cyan"></i> Active Dispatch Directives</h2>
+            <span class="badge bg-purple" id="lbl-volunteer-task-count">0 Tasks Active</span>
+          </div>
+
+          <!-- Active Dispatch Directives -->
+          <div id="volunteer-task-list" class="task-grid">
+            <!-- Dynamic task cards load here -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="volunteer-empty-state" class="glass-panel text-muted" style="text-align: center; padding: 3rem 1.5rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-circle-check icon-huge text-green" style="font-size: 2.5rem; color: var(--md-sys-color-success);"></i>
+            <h3>All Zones Clear</h3>
+            <p>No active operational dispatches have been transmitted. Standby for directives.</p>
+          </div>
+
+          <!-- Bidirectional incident reporting from the field -->
+          <div class="glass-panel" style="margin-top: 1rem;">
+            <div class="card-header">
+              <h2><i class="fa-solid fa-triangle-exclamation text-warning"></i> Report Field Crowd Incident</h2>
+            </div>
+            <div class="card-body" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <p style="font-size: 0.8rem; color: var(--md-sys-color-text-secondary);">Directly flag structural scanner errors or crowd surges observed from your sector to operations control:</p>
+              
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div>
+                  <span class="small-title">Sector / Zone Location</span>
+                  <select id="sel-report-zone" class="form-input">
+                    <option value="gate_1">Gate 1 (North Entrance)</option>
+                    <option value="gate_2">Gate 2 (East Entrance)</option>
+                    <option value="gate_3">Gate 3 (South Entrance)</option>
+                    <option value="gate_4">Gate 4 (West Entrance)</option>
+                    <option value="concourse_a">Concourse A (North Corridor)</option>
+                    <option value="concourse_b">Concourse B (East Corridor)</option>
+                    <option value="concourse_c">Concourse C (South Corridor)</option>
+                    <option value="concourse_d">Concourse D (West Corridor)</option>
+                    <option value="transit_hub_x">Transit Hub X (Light Rail)</option>
+                    <option value="transit_hub_y">Transit Hub Y (Shuttle Terminal)</option>
+                  </select>
+                </div>
+                <div>
+                  <span class="small-title">Severity Level</span>
+                  <select id="sel-report-severity" class="form-input">
+                    <option value="elevated">Elevated (Surge Building)</option>
+                    <option value="critical">Critical (Jammed/Bottleneck)</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <span class="small-title">Crowd Incident Description</span>
+                <textarea id="txt-report-desc" rows="2" class="form-input" placeholder="e.g., Ticket scanner gate 3A is frozen, line backing up onto outer road..."></textarea>
+              </div>
+
+              <button class="btn-primary" style="padding: 0.65rem 1.25rem; font-weight: 600; width: 100%; justify-content: center;" onclick="reportFieldIncident()">
+                <i class="fa-solid fa-paper-plane"></i> Transmit Alert to Ops Center
+              </button>
+              <div id="report-status-msg" style="font-size: 0.75rem; text-align: center; font-weight: 500;" class="hidden"></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- RIGHT COLUMN: PERSISTENT AI COPILOT SIDEBAR -->
+      <aside class="copilot-sidebar">
+        <div class="copilot-header">
+          <h3><i class="fa-solid fa-sparkles"></i> Gemini AI Copilot</h3>
+          <span class="badge bg-purple">Active Reasoning</span>
+        </div>
+        
+        <div class="copilot-body">
+          <div>
+            <span class="small-title">PREDICTIVE ACTIONS & DISPATCHES</span>
+            <div id="copilot-recommendations-list" style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem;">
+              <!-- Dynamic recommendations loaded here -->
+            </div>
+          </div>
+
+          <div class="flex-grow" style="display: flex; flex-direction: column; min-height: 0;">
+            <span class="small-title">CONVERSATIONAL ASSISTANT</span>
+            <div class="chat-window-container flex-grow mt-05" style="border-radius: var(--md-sys-shape-corner-medium); border: 1px solid var(--md-sys-color-border); display: flex; flex-direction: column; overflow: hidden;">
+              <div id="chat-messages-box" class="chat-messages-box"></div>
+              <div class="chat-input-bar">
+                <input type="text" id="txt-chat-input" placeholder="Ask Gemini..." onkeypress="handleChatKeyPress(event)"/>
+                <button id="btn-chat-send" class="btn-primary" onclick="sendChatMessage()" style="padding: 0.35rem 0.65rem;">
+                  <i class="fa-solid fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+    </div>
+  </div>
+
+  <script src="volunteer.js"></script>
+</body>
+</html>
